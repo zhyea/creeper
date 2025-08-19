@@ -1,0 +1,29 @@
+# Creeper 静态小说站点生成器配置文件
+
+# 站点基本信息
+site:
+  title: "我的小说站点"
+  description: "静态小说阅读站点"
+  author: "作者"
+  base_url: "/"
+
+# 目录配置
+input_dir: "novels"    # 小说文件输入目录
+output_dir: "dist"     # 静态站点输出目录
+
+# 主题配置
+theme:
+  name: "default"
+  primary_color: "#2c3e50"      # 主色调
+  secondary_color: "#3498db"    # 辅色调
+  background_color: "#ffffff"   # 背景色
+  text_color: "#333333"         # 文字颜色
+  font_family: "'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif"
+  font_size: "16px"
+  line_height: "1.6"
+
+# 构建配置
+build:
+  minify_html: true    # 压缩HTML
+  minify_css: true     # 压缩CSS
+  minify_js: true      # 压缩JavaScript
