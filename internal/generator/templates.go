@@ -98,11 +98,10 @@ func (g *Generator) loadTemplates() error {
 <div class="novels-grid">
     {{range .Novels}}
     <div class="novel-card">
-        {{if .Cover}}
         <div class="novel-cover">
-            <img src="{{$.Config.Site.BaseURL}}{{.Cover}}" alt="{{.Title}} 封面">
+            <img src="{{$.Config.Site.BaseURL}}novels/{{sanitizeFileName .Title}}/cover.svg" alt="{{.Title}} 封面" 
+                 onerror="this.src='{{$.Config.Site.BaseURL}}static/images/default-cover.svg'">
         </div>
-        {{end}}
         <div class="novel-info">
             <h3 class="novel-title">
                 <a href="{{$.Config.Site.BaseURL}}novels/{{sanitizeFileName .Title}}/">{{.Title}}</a>
@@ -128,11 +127,10 @@ func (g *Generator) loadTemplates() error {
 {{define "content"}}
 <div class="novel-header">
     <div class="novel-meta">
-        {{if .Novel.Cover}}
         <div class="novel-cover-large">
-            <img src="{{$.Config.Site.BaseURL}}{{.Novel.Cover}}" alt="{{.Novel.Title}} 封面">
+            <img src="{{$.Config.Site.BaseURL}}novels/{{sanitizeFileName .Novel.Title}}/cover.svg" alt="{{.Novel.Title}} 封面"
+                 onerror="this.src='{{$.Config.Site.BaseURL}}static/images/default-cover.svg'">
         </div>
-        {{end}}
         <div class="novel-details">
             <h1 class="novel-title">{{.Novel.Title}}</h1>
             {{if .Novel.Author}}

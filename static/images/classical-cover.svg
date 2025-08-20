@@ -70,16 +70,11 @@
     <rect x="12" y="8" width="11" height="4" fill="#34495e" rx="1"/>
   </g>
   
-  <!-- 标题区域 -->
-  <rect x="70" y="280" width="160" height="50" fill="#8b4513" opacity="0.1" rx="5"/>
-  
-  <!-- 标题文字 -->
-  <text x="150" y="305" text-anchor="middle" fill="#8b4513" font-family="serif" font-size="22" font-weight="bold">
-    古典文学
-  </text>
-  
-  <!-- 副标题 -->
-  <text x="150" y="325" text-anchor="middle" fill="#a0522d" font-family="serif" font-size="14" font-style="italic">
-    Classical Literature
-  </text>
+  <!-- 装饰元素 -->
+  <g transform="translate(150, 310)" fill="url(#frameGradient)" opacity="0.6">
+    <!-- 古典装饰符号 -->
+    <circle cx="0" cy="0" r="12" fill="none" stroke="url(#frameGradient)" stroke-width="2"/>
+    <path d="M-8,-8 L8,8 M8,-8 L-8,8" stroke="url(#frameGradient)" stroke-width="2"/>
+    <circle cx="0" cy="0" r="3" fill="url(#frameGradient)"/>
+  </g>
 </svg>

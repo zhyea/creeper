@@ -121,20 +121,11 @@ def generate_svg_cover(title: str, subtitle: str = "", theme: str = "default",
     
     {decorations}
     
-    <!-- 标题区域 -->
-    <rect x="40" y="{height-80}" width="{width-80}" height="60" fill="#000000" opacity="0.3" rx="10"/>
-    
-    <!-- 主标题 -->
-    <text x="{width//2}" y="{height-45}" text-anchor="middle" fill="{text_color}" 
-          font-family="Arial, sans-serif" font-size="24" font-weight="bold">
-        {title}
-    </text>
-    
-    <!-- 副标题 -->
-    <text x="{width//2}" y="{height-20}" text-anchor="middle" fill="{text_color}" 
-          font-family="Arial, sans-serif" font-size="14" opacity="0.8">
-        {subtitle}
-    </text>
+    <!-- 装饰元素 -->
+    <g transform="translate({width//2}, {height-50})">
+        <circle cx="0" cy="0" r="8" fill="{accent_color}" opacity="0.4"/>
+        <circle cx="0" cy="0" r="4" fill="{accent_color}" opacity="0.7"/>
+    </g>
 </svg>'''
     
     return svg

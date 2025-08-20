@@ -72,16 +72,11 @@
     </circle>
   </g>
   
-  <!-- 标题区域背景 -->
-  <rect x="20" y="340" width="260" height="50" fill="#000000" opacity="0.3" rx="10"/>
-  
-  <!-- 标题文字 -->
-  <text x="150" y="360" text-anchor="middle" fill="#ffffff" font-family="serif" font-size="20" font-weight="bold">
-    奇幻小说
-  </text>
-  
-  <!-- 副标题 -->
-  <text x="150" y="380" text-anchor="middle" fill="#ecf0f1" font-family="serif" font-size="12">
-    Fantasy Novel
-  </text>
+  <!-- 装饰符号 -->
+  <g transform="translate(150, 360)" fill="#ffffff" opacity="0.6">
+    <!-- 魔法符文 -->
+    <circle cx="0" cy="0" r="15" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.4"/>
+    <polygon points="-8,-8 0,-15 8,-8 5,0 0,-5 -5,0" fill="#ffffff" opacity="0.5"/>
+    <circle cx="0" cy="0" r="3" fill="#ffffff" opacity="0.8"/>
+  </g>
 </svg>

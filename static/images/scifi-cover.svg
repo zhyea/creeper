@@ -82,19 +82,19 @@
     <circle cx="180" cy="330" r="3"/>
   </g>
   
-  <!-- 全息效果标题背景 -->
-  <rect x="40" y="360" width="220" height="30" fill="#00ffff" opacity="0.1" rx="15"/>
-  <rect x="40" y="360" width="220" height="30" fill="none" stroke="url(#neonGradient)" stroke-width="1" rx="15"/>
-  
-  <!-- 标题文字 -->
-  <text x="150" y="380" text-anchor="middle" fill="url(#neonGradient)" font-family="monospace" font-size="20" font-weight="bold">
-    科幻小说
-  </text>
-  
-  <!-- 副标题 -->
-  <text x="150" y="395" text-anchor="middle" fill="#00ffff" font-family="monospace" font-size="10" opacity="0.8">
-    SCIENCE FICTION
-  </text>
+  <!-- 科技装饰元素 -->
+  <g transform="translate(150, 370)">
+    <!-- 全息投影效果 -->
+    <rect x="-30" y="-8" width="60" height="16" fill="#00ffff" opacity="0.1" rx="8"/>
+    <rect x="-30" y="-8" width="60" height="16" fill="none" stroke="url(#neonGradient)" stroke-width="1" rx="8"/>
+    <!-- 中央指示器 -->
+    <circle cx="0" cy="0" r="4" fill="url(#neonGradient)" opacity="0.8">
+      <animate attributeName="opacity" values="0.4;1;0.4" dur="2s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="0" cy="0" r="8" fill="none" stroke="url(#neonGradient)" stroke-width="1" opacity="0.4">
+      <animate attributeName="r" values="6;12;6" dur="3s" repeatCount="indefinite"/>
+    </circle>
+  </g>
   
   <!-- 扫描线效果 -->
   <g opacity="0.3">

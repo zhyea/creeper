@@ -39,15 +39,9 @@
     <line x1="25" y1="75" x2="100" y2="75" stroke="#7f8c8d" stroke-width="1"/>
   </g>
   
-  <!-- 标题文字 -->
-  <text x="150" y="300" text-anchor="middle" fill="#ffffff" font-family="Arial, sans-serif" font-size="24" font-weight="bold">
-    默认封面
-  </text>
-  
-  <!-- 副标题 -->
-  <text x="150" y="330" text-anchor="middle" fill="#ecf0f1" font-family="Arial, sans-serif" font-size="14">
-    Creeper 生成
-  </text>
+  <!-- 装饰元素 -->
+  <circle cx="150" cy="310" r="8" fill="#ffffff" opacity="0.3"/>
+  <circle cx="150" cy="310" r="4" fill="#ffffff" opacity="0.6"/>
   
   <!-- 装饰线条 -->
   <line x1="50" y1="350" x2="250" y2="350" stroke="#ffffff" stroke-width="1" opacity="0.5"/>

@@ -61,6 +61,11 @@ func (g *Generator) Generate() error {
 
 	// 6. 生成小说页面
 	for _, novel := range g.novels {
+		// 生成带标题的封面
+		if err := g.generateNovelCover(novel); err != nil {
+			fmt.Printf("警告：生成小说 %s 的封面失败: %v\n", novel.Title, err)
+		}
+		
 		if err := g.generateNovel(novel); err != nil {
 			return fmt.Errorf("生成小说 %s 失败: %v", novel.Title, err)
 		}
