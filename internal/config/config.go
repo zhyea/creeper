@@ -101,3 +101,13 @@ func (c *Config) Save(path string) error {
 
 	return os.WriteFile(path, data, 0644)
 }
+
+// Builder 创建配置建造者
+func Builder() *ConfigBuilder {
+	return NewConfigBuilder()
+}
+
+// BuilderWithDefaults 创建带默认值的配置建造者
+func BuilderWithDefaults() *ConfigBuilder {
+	return NewConfigBuilder().WithDefaults()
+}

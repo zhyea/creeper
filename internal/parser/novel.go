@@ -39,18 +39,24 @@ type Chapter struct {
 
 // Parser Markdown解析器
 type Parser struct {
-	chapterRegex *regexp.Regexp
-	metaRegex    *regexp.Regexp
+	chapterRegex    *regexp.Regexp
+	metaRegex       *regexp.Regexp
+	strategyManager *StrategyManager
 }
 
 // New 创建新的解析器
 func New() *Parser {
-	return &Parser{
+	parser := &Parser{
 		// 匹配章节标题，支持多种格式，包括卷和章节
 		chapterRegex: regexp.MustCompile(`^#+\s*(?:第[0-9一二三四五六七八九十百千万]+[卷章回]|Chapter\s*\d+|Volume\s*\d+|[0-9]+\.)\s*(.+)`),
 		// 匹配元数据
 		metaRegex: regexp.MustCompile(`^---\s*$`),
 	}
+	
+	// 初始化策略管理器
+	parser.strategyManager = NewStrategyManager(parser)
+	
+	return parser
 }
 
 // ParseNovel 解析小说目录
@@ -67,13 +73,11 @@ func (p *Parser) ParseNovel(novelPath string) (*Novel, error) {
 		Chapters:  make([]*Chapter, 0),
 	}
 
-	if info.IsDir() {
-		// 目录模式：每个文件是一个章节
-		return p.parseNovelFromDir(novel)
-	} else {
-		// 单文件模式：一个文件包含所有章节
-		return p.parseNovelFromFile(novel)
-	}
+	// 使用策略模式选择合适的解析策略
+	strategy := p.strategyManager.SelectStrategy(novelPath)
+	fmt.Printf("使用 %s 策略解析: %s\n", strategy.GetName(), novelPath)
+	
+	return novel, strategy.Parse(novel, novelPath)
 }
 
 // parseNovelFromDir 从目录解析小说
