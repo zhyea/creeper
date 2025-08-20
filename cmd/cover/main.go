@@ -235,28 +235,37 @@ func (g *CoverGenerator) generateSVGCover(title, subtitle string, theme CoverThe
 
 // createGradient 创建渐变定义
 func (g *CoverGenerator) createGradient(colors []string) string {
+	gradient := ""
+	
 	if len(colors) == 2 {
-		return fmt.Sprintf(`
+		gradient = fmt.Sprintf(`
         <linearGradient id="bgGradient" x1="0%%" y1="0%%" x2="100%%" y2="100%%">
             <stop offset="0%%" style="stop-color:%s;stop-opacity:1" />
             <stop offset="100%%" style="stop-color:%s;stop-opacity:1" />
         </linearGradient>`, colors[0], colors[1])
-	}
-	
-	if len(colors) >= 3 {
-		return fmt.Sprintf(`
+	} else if len(colors) >= 3 {
+		gradient = fmt.Sprintf(`
         <radialGradient id="bgGradient" cx="50%%" cy="30%%" r="80%%">
             <stop offset="0%%" style="stop-color:%s;stop-opacity:1" />
             <stop offset="50%%" style="stop-color:%s;stop-opacity:1" />
             <stop offset="100%%" style="stop-color:%s;stop-opacity:1" />
         </radialGradient>`, colors[0], colors[1], colors[2])
-	}
-	
-	// 默认单色
-	return fmt.Sprintf(`
+	} else {
+		// 默认单色
+		gradient = fmt.Sprintf(`
         <linearGradient id="bgGradient">
             <stop offset="0%%" style="stop-color:%s;stop-opacity:1" />
         </linearGradient>`, colors[0])
+	}
+	
+	// 为现代主题添加额外的渐变
+	gradient += `
+        <linearGradient id="accentGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#f093fb;stop-opacity:0.8" />
+            <stop offset="100%" style="stop-color:#f5576c;stop-opacity:0.6" />
+        </linearGradient>`
+	
+	return gradient
 }
 
 // printSuccess 输出成功信息
@@ -312,10 +321,14 @@ func (g *CoverGenerator) generateDecorations(themeName, accentColor string) stri
 
 	case "modern":
 		return `
-        <!-- 几何装饰 -->
+        <!-- 现代几何装饰 -->
         <g fill="#ffffff" opacity="0.2">
-            <circle cx="250" cy="100" r="60"/>
-            <rect x="50" y="280" width="40" height="40" transform="rotate(45 70 300)"/>
+            <circle cx="220" cy="120" r="80"/>
+            <circle cx="100" cy="300" r="50"/>
+        </g>
+        <g fill="url(#accentGradient)" opacity="0.4">
+            <rect x="180" y="80" width="50" height="50" rx="8" transform="rotate(15 205 105)"/>
+            <rect x="70" y="250" width="35" height="35" rx="6" transform="rotate(-20 87 267)"/>
         </g>`
 
 	case "classical":
