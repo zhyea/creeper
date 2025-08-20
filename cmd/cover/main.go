@@ -76,6 +76,14 @@ func getDefaultThemes() map[string]CoverTheme {
 			Style:       "tech",
 			Description: "科幻未来主题，霓虹科技感",
 		},
+		"wuxia": {
+			Name:        "wuxia",
+			BgGradient:  []string{"#f5f5dc", "#e6ddd4", "#d2b48c"},
+			TextColor:   "#2f4f4f",
+			AccentColor: "#dc143c",
+			Style:       "traditional",
+			Description: "武侠江湖风格，水墨山水意境",
+		},
 	}
 }
 
@@ -338,6 +346,36 @@ func (g *CoverGenerator) generateDecorations(themeName, accentColor string) stri
         <!-- 装饰花纹 -->
         <g fill="#ffd700" opacity="0.6">
             <circle cx="150" cy="80" r="20" fill="none" stroke="#ffd700" stroke-width="2"/>
+        </g>`
+
+	case "wuxia":
+		return `
+        <!-- 远山剪影 -->
+        <g fill="#696969" opacity="0.4">
+            <path d="M0,200 Q50,180 100,190 Q150,170 200,185 Q250,175 300,190 L300,400 L0,400 Z"/>
+            <path d="M0,220 Q60,200 120,210 Q180,195 240,205 Q270,200 300,210 L300,400 L0,400 Z"/>
+        </g>
+        
+        <!-- 竹林 -->
+        <g fill="#2f4f4f" opacity="0.3">
+            <rect x="50" y="200" width="3" height="80" rx="1"/>
+            <rect x="60" y="190" width="3" height="90" rx="1"/>
+            <rect x="70" y="205" width="3" height="75" rx="1"/>
+        </g>
+        
+        <!-- 剑影 -->
+        <g transform="translate(150, 150) rotate(-15)">
+            <rect x="-1" y="-40" width="2" height="80" fill="#c0c0c0" opacity="0.6"/>
+            <polygon points="0,-42 -2,-40 2,-40" fill="#c0c0c0" opacity="0.6"/>
+        </g>
+        
+        <!-- 印章 -->
+        <g transform="translate(230, 320)">
+            <circle cx="0" cy="0" r="15" fill="#dc143c" opacity="0.7"/>
+            <rect x="-6" y="-6" width="4" height="4" fill="#ffffff" opacity="0.9"/>
+            <rect x="2" y="-6" width="4" height="4" fill="#ffffff" opacity="0.9"/>
+            <rect x="-6" y="2" width="4" height="4" fill="#ffffff" opacity="0.9"/>
+            <rect x="2" y="2" width="4" height="4" fill="#ffffff" opacity="0.9"/>
         </g>`
 
 	default:

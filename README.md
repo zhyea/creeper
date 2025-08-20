@@ -197,6 +197,7 @@ build:
 - `modern-cover.svg` - 现代风格  
 - `classical-cover.svg` - 古典风格
 - `scifi-cover.svg` - 科幻风格
+- `wuxia-cover.svg` - 武侠风格
 
 ### 自定义封面
 
@@ -223,6 +224,7 @@ build:
 - **modern**: 现代几何风格，简约时尚
 - **classical**: 古典文学风格，典雅庄重
 - **scifi**: 科幻未来主题，霓虹科技感
+- **wuxia**: 武侠江湖风格，水墨山水意境
 
 ## 📱 响应式设计
 
