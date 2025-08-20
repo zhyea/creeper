@@ -2,7 +2,7 @@
 title: 星辰之路
 author: 示例作者
 description: 一部展示多卷多章节结构的史诗奇幻小说，讲述了一个少女的成长与冒险之路。
-cover: static/images/cover-example.jpg
+cover: static/images/fantasy-cover.svg
 ---
 
 # 星辰之路

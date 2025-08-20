@@ -135,7 +135,7 @@ description: 小说简介
 title: 我的小说
 author: 作者姓名
 description: 小说简介
-cover: static/images/cover.jpg
+cover: static/images/fantasy-cover.svg
 ---
 ```
 
@@ -191,6 +191,34 @@ build:
 - `font_family`: 字体族
 - `font_size`: 基础字体大小
 - `line_height`: 行高
+
+## 🖼️ 封面图片
+
+项目提供了多种预设的 SVG 封面模板：
+
+- `default-cover.svg` - 默认风格
+- `fantasy-cover.svg` - 奇幻风格
+- `modern-cover.svg` - 现代风格  
+- `classical-cover.svg` - 古典风格
+- `scifi-cover.svg` - 科幻风格
+
+### 自定义封面
+
+使用封面生成器创建自定义封面：
+
+```bash
+# 生成默认风格封面
+python3 generate_cover.py "我的小说" -s "副标题" -t default
+
+# 生成奇幻风格封面
+python3 generate_cover.py "魔法世界" -t fantasy
+
+# 查看所有可用主题
+python3 generate_cover.py --list-themes
+
+# 自定义尺寸
+python3 generate_cover.py "我的小说" --width 400 --height 600
+```
 
 ## 📱 响应式设计
 
