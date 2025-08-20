@@ -3,7 +3,6 @@ package parser
 import (
 	"bufio"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -129,7 +128,7 @@ func (p *Parser) parseNovelFromDir(novel *Novel) (*Novel, error) {
 
 // parseNovelFromFile 从单个文件解析小说
 func (p *Parser) parseNovelFromFile(novel *Novel) (*Novel, error) {
-	content, err := ioutil.ReadFile(novel.Path)
+	content, err := os.ReadFile(novel.Path)
 	if err != nil {
 		return nil, fmt.Errorf("读取文件失败: %v", err)
 	}
@@ -251,7 +250,7 @@ func (p *Parser) parseMetaLine(novel *Novel, line string) {
 
 // parseChapterFile 解析章节文件
 func (p *Parser) parseChapterFile(filePath string) (*Chapter, error) {
-	content, err := ioutil.ReadFile(filePath)
+	content, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, err
 	}

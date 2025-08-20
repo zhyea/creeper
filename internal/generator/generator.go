@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -85,7 +84,7 @@ func (g *Generator) parseNovels() error {
 	}
 
 	// 遍历输入目录
-	entries, err := ioutil.ReadDir(inputDir)
+	entries, err := os.ReadDir(inputDir)
 	if err != nil {
 		return fmt.Errorf("读取输入目录失败: %v", err)
 	}
@@ -238,7 +237,7 @@ func (g *Generator) generateSearchData() error {
 	}
 
 	searchPath := filepath.Join(g.config.OutputDir, "static", "js", "search-data.json")
-	return ioutil.WriteFile(searchPath, data, 0644)
+	return os.WriteFile(searchPath, data, 0644)
 }
 
 // renderTemplate 渲染模板到默认位置

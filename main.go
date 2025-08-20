@@ -4,11 +4,9 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"os"
-	"path/filepath"
 
-	"creeper/internal/generator"
 	"creeper/internal/config"
+	"creeper/internal/generator"
 )
 
 func main() {

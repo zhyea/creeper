@@ -2,7 +2,7 @@ package generator
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 )
 
@@ -555,7 +555,7 @@ body {
 	)
 
 	cssPath := filepath.Join(g.config.OutputDir, "static", "css", "style.css")
-	return ioutil.WriteFile(cssPath, []byte(css), 0644)
+	return os.WriteFile(cssPath, []byte(css), 0644)
 }
 
 // generateJS 生成JavaScript文件
@@ -779,5 +779,5 @@ func (g *Generator) generateJS() error {
 })();`
 
 	jsPath := filepath.Join(g.config.OutputDir, "static", "js", "main.js")
-	return ioutil.WriteFile(jsPath, []byte(js), 0644)
+	return os.WriteFile(jsPath, []byte(js), 0644)
 }

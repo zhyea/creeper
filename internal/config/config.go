@@ -1,22 +1,22 @@
 package config
 
 import (
-	"io/ioutil"
 	"gopkg.in/yaml.v3"
+	"os"
 )
 
 // Config 配置结构
 type Config struct {
 	// 站点基本信息
 	Site SiteConfig `yaml:"site"`
-	
+
 	// 目录配置
 	InputDir  string `yaml:"input_dir"`
 	OutputDir string `yaml:"output_dir"`
-	
+
 	// 主题配置
 	Theme ThemeConfig `yaml:"theme"`
-	
+
 	// 构建配置
 	Build BuildConfig `yaml:"build"`
 }
@@ -79,7 +79,7 @@ func Default() *Config {
 
 // Load 从文件加载配置
 func Load(path string) (*Config, error) {
-	data, err := ioutil.ReadFile(path)
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
@@ -99,5 +99,5 @@ func (c *Config) Save(path string) error {
 		return err
 	}
 
-	return ioutil.WriteFile(path, data, 0644)
+	return os.WriteFile(path, data, 0644)
 }

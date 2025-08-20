@@ -3,7 +3,7 @@ package generator
 import (
 	"fmt"
 	"html/template"
-	"path/filepath"
+	"creeper/internal/parser"
 )
 
 // loadTemplates 加载所有模板
@@ -24,6 +24,21 @@ func (g *Generator) loadTemplates() error {
 				return fmt.Sprintf("%.1f千字", float64(count)/1000)
 			} else {
 				return fmt.Sprintf("%.1f万字", float64(count)/10000)
+			}
+		},
+		"totalWordCount": func(chapters []*parser.Chapter) string {
+			// 计算章节总字数
+			total := 0
+			for _, chapter := range chapters {
+				total += chapter.WordCount
+			}
+			// 使用 formatWordCount 格式化
+			if total < 1000 {
+				return fmt.Sprintf("%d字", total)
+			} else if total < 10000 {
+				return fmt.Sprintf("%.1f千字", float64(total)/1000)
+			} else {
+				return fmt.Sprintf("%.1f万字", float64(total)/10000)
 			}
 		},
 	}
@@ -100,7 +115,7 @@ func (g *Generator) loadTemplates() error {
             {{end}}
             <div class="novel-stats">
                 <span class="chapter-count">{{len .Chapters}} 章</span>
-                <span class="word-count">{{formatWordCount (len .Chapters | printf "%d")}} 总字数</span>
+                <span class="word-count">{{totalWordCount .Chapters}} 总字数</span>
             </div>
         </div>
     </div>
