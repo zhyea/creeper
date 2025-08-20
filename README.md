@@ -204,21 +204,32 @@ build:
 
 ### 自定义封面
 
-使用封面生成器创建自定义封面：
+使用 Go 封面生成器创建自定义封面：
 
 ```bash
+# 构建封面生成器
+./build-tools.sh
+
 # 生成默认风格封面
-python3 generate_cover.py "我的小说" -s "副标题" -t default
+./cover-gen -title "我的小说" -subtitle "副标题" -theme default
 
 # 生成奇幻风格封面
-python3 generate_cover.py "魔法世界" -t fantasy
+./cover-gen -title "魔法世界" -theme fantasy
 
 # 查看所有可用主题
-python3 generate_cover.py --list-themes
+./cover-gen -list-themes
 
-# 自定义尺寸
-python3 generate_cover.py "我的小说" --width 400 --height 600
+# 自定义尺寸和输出路径
+./cover-gen -title "我的小说" -width 400 -height 600 -output "custom/path/cover.svg"
 ```
+
+### 主题特色
+
+- **default**: 简洁现代的设计风格，适合通用小说
+- **fantasy**: 奇幻魔法主题，适合玄幻、奇幻小说
+- **modern**: 现代几何风格，简约时尚
+- **classical**: 古典文学风格，典雅庄重
+- **scifi**: 科幻未来主题，霓虹科技感
 
 ## 📱 响应式设计
 
