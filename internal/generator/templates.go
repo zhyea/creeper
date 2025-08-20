@@ -42,6 +42,7 @@ func (g *Generator) getBaseTemplate() string {
     <meta name="description" content="{{.Config.Site.Description}}">
     <meta name="author" content="{{.Config.Site.Author}}">
     <link rel="stylesheet" href="{{.Config.Site.BaseURL}}static/css/style.css">
+    <link rel="stylesheet" href="{{.Config.Site.BaseURL}}static/css/reading-enhanced.css">
     <link rel="icon" type="image/x-icon" href="{{.Config.Site.BaseURL}}static/images/favicon.ico">
 </head>
 <body>
@@ -73,6 +74,7 @@ func (g *Generator) getBaseTemplate() string {
     </footer>
 
     <script src="{{.Config.Site.BaseURL}}static/js/main.js"></script>
+    <script src="{{.Config.Site.BaseURL}}static/js/reading-enhanced.js"></script>
 </body>
 </html>`
 }

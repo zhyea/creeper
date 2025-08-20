@@ -18,6 +18,15 @@ func (g *Generator) generateAssets() error {
 		return fmt.Errorf("生成JavaScript失败: %v", err)
 	}
 
+	// 生成增强的阅读体验资源
+	if err := g.generateEnhancedCSS(); err != nil {
+		return fmt.Errorf("生成增强CSS失败: %v", err)
+	}
+
+	if err := g.generateEnhancedJS(); err != nil {
+		return fmt.Errorf("生成增强JavaScript失败: %v", err)
+	}
+
 	return nil
 }
 
