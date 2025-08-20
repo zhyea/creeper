@@ -9,39 +9,7 @@ import (
 // loadTemplates 加载所有模板
 func (g *Generator) loadTemplates() error {
 	// 创建模板函数
-	funcMap := template.FuncMap{
-		"sanitizeFileName": g.sanitizeFileName,
-		"add": func(a, b int) int {
-			return a + b
-		},
-		"sub": func(a, b int) int {
-			return a - b
-		},
-		"formatWordCount": func(count int) string {
-			if count < 1000 {
-				return fmt.Sprintf("%d字", count)
-			} else if count < 10000 {
-				return fmt.Sprintf("%.1f千字", float64(count)/1000)
-			} else {
-				return fmt.Sprintf("%.1f万字", float64(count)/10000)
-			}
-		},
-		"totalWordCount": func(chapters []*parser.Chapter) string {
-			// 计算章节总字数
-			total := 0
-			for _, chapter := range chapters {
-				total += chapter.WordCount
-			}
-			// 使用 formatWordCount 格式化
-			if total < 1000 {
-				return fmt.Sprintf("%d字", total)
-			} else if total < 10000 {
-				return fmt.Sprintf("%.1f千字", float64(total)/1000)
-			} else {
-				return fmt.Sprintf("%.1f万字", float64(total)/10000)
-			}
-		},
-	}
+	funcMap := g.createTemplateFuncs()
 
 	// 基础模板
 	baseTemplate := `<!DOCTYPE html>
@@ -224,8 +192,17 @@ func (g *Generator) loadTemplates() error {
 		return fmt.Errorf("编译小说模板失败: %v", err)
 	}
 
-	// 为章节模板添加 safeHTML 函数
-	chapterFuncMap := template.FuncMap{
+	g.templates["chapter"], err = template.New("chapter").Funcs(funcMap).Parse(chapterTemplate)
+	if err != nil {
+		return fmt.Errorf("编译章节模板失败: %v", err)
+	}
+
+	return nil
+}
+
+// createTemplateFuncs 创建模板函数映射
+func (g *Generator) createTemplateFuncs() template.FuncMap {
+	return template.FuncMap{
 		"sanitizeFileName": g.sanitizeFileName,
 		"add": func(a, b int) int {
 			return a + b
@@ -242,15 +219,26 @@ func (g *Generator) loadTemplates() error {
 				return fmt.Sprintf("%.1f万字", float64(count)/10000)
 			}
 		},
+		"totalWordCount": func(chapters []*parser.Chapter) string {
+			total := 0
+			for _, chapter := range chapters {
+				total += chapter.WordCount
+			}
+			return g.formatWordCount(total)
+		},
 		"safeHTML": func(s string) template.HTML {
 			return template.HTML(s)
 		},
 	}
+}
 
-	g.templates["chapter"], err = template.New("chapter").Funcs(chapterFuncMap).Parse(chapterTemplate)
-	if err != nil {
-		return fmt.Errorf("编译章节模板失败: %v", err)
+// formatWordCount 格式化字数显示
+func (g *Generator) formatWordCount(count int) string {
+	if count < 1000 {
+		return fmt.Sprintf("%d字", count)
+	} else if count < 10000 {
+		return fmt.Sprintf("%.1f千字", float64(count)/1000)
+	} else {
+		return fmt.Sprintf("%.1f万字", float64(count)/10000)
 	}
-
-	return nil
 }
