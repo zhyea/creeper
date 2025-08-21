@@ -11,6 +11,7 @@ Creeper 是一个用 Go 语言开发的静态小说站点生成器，能够读�
 - 📊 **阅读进度**：显示章节阅读进度条
 - 🎯 **高度可配置**：支持自定义主题色彩和样式
 - ⚡ **快速生成**：高效的静态站点生成
+- 🚀 **一键部署**：支持 Cloudflare Pages、GitHub Pages 等平台部署
 
 ## 🚀 快速开始
 
@@ -41,7 +42,12 @@ Creeper 是一个用 Go 语言开发的静态小说站点生成器，能够读�
 ./creeper -serve
 ```
 
-4. **访问网站**：打开浏览器访问 `http://localhost:8080`
+4. **一键部署**：
+```bash
+./creeper -deploy
+```
+
+5. **访问网站**：打开浏览器访问 `http://localhost:8080` 或部署后的在线地址
 
 ### 命令行选项
 
@@ -54,6 +60,10 @@ Creeper 是一个用 Go 语言开发的静态小说站点生成器，能够读�
   -output string    静态站点输出目录 (默认 "dist")
   -serve           生成后启动本地服务器
   -port int        本地服务器端口 (默认 8080)
+  -deploy          生成后自动部署
+  -generator string 生成器类型 (static|enhanced|minimal)
+  -verbose         详细输出
+  -status          显示系统状态
 ```
 
 ## 📚 小说文件格式
@@ -247,6 +257,66 @@ build:
   minify_css: true
   minify_js: true
 ```
+
+## 🚀 部署功能
+
+Creeper 支持将生成的静态站点一键部署到多个平台：
+
+### Cloudflare Pages 部署
+
+1. **初始化部署配置**：
+```bash
+./deploy-tool -init -type cloudflare
+```
+
+2. **编辑配置文件** `deploy-config.yaml`：
+```yaml
+type: cloudflare
+cloudflare:
+  account_id: "your-account-id"      # Cloudflare 账户 ID
+  project_name: "my-novel-site"      # Pages 项目名称
+  api_key: "your-api-key"            # API 密钥
+  email: "your-email@example.com"    # 注册邮箱
+  branch: "main"                     # 部署分支
+  framework: "none"                  # 框架类型
+  output_dir: "."                    # 输出目录
+```
+
+3. **启用部署**：在 `config.yaml` 中设置：
+```yaml
+deploy:
+  enabled: true
+  type: "cloudflare"
+  config: "deploy-config.yaml"
+```
+
+4. **一键部署**：
+```bash
+./creeper -deploy
+```
+
+### 部署工具使用
+
+```bash
+# 初始化部署配置
+./deploy-tool -init -type cloudflare
+
+# 部署站点
+./deploy-tool -config deploy-config.yaml -site dist
+
+# 查看部署状态
+./deploy-tool -status
+
+# 查看部署历史
+./deploy-tool -list
+```
+
+### 支持的部署平台
+
+- **Cloudflare Pages**：快速、免费、全球 CDN
+- **GitHub Pages**：与 Git 集成，适合开源项目
+- **Vercel**：现代化部署平台，支持多种框架
+- **Netlify**：功能丰富的静态站点托管平台
 
 ## 🎨 主题定制
 

@@ -27,3 +27,9 @@ build:
   minify_html: true    # 压缩HTML
   minify_css: true     # 压缩CSS
   minify_js: true      # 压缩JavaScript
+
+# 部署配置
+deploy:
+  enabled: false       # 是否启用部署
+  type: "cloudflare"   # 部署类型
+  config: "deploy-config.yaml"  # 部署配置文件路径

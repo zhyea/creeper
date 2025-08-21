@@ -19,6 +19,16 @@ type Config struct {
 
 	// 构建配置
 	Build BuildConfig `yaml:"build"`
+
+	// 部署配置
+	Deploy *DeployConfig `yaml:"deploy,omitempty"`
+}
+
+// DeployConfig 部署配置
+type DeployConfig struct {
+	Enabled bool   `yaml:"enabled"`
+	Type    string `yaml:"type"`
+	Config  string `yaml:"config"`
 }
 
 // SiteConfig 站点配置

@@ -9,6 +9,7 @@ import (
 	"creeper/internal/generator"
 	"creeper/internal/parser"
 	"creeper/internal/common"
+	"creeper/internal/deploy"
 )
 
 // CreeperFacade Creeper 外观类
@@ -17,6 +18,7 @@ type CreeperFacade struct {
 	parser          *parser.Parser
 	generator       *generator.Generator
 	enhancedParser  *parser.EnhancedParser
+	deployManager   *deploy.DeployManager
 	logger          *common.Logger
 	resourceManager *common.ResourceManager
 	configCache     *common.ConfigCache
@@ -84,10 +86,20 @@ func (cf *CreeperFacade) initializeComponents() {
 	// 创建生成器
 	cf.generator = generator.New(cf.config)
 	
+	// 初始化部署管理器
+	if cf.config.Deploy != nil && cf.config.Deploy.Enabled {
+		if err := cf.initializeDeployManager(); err != nil {
+			cf.logger.Warn("部署管理器初始化失败:", err)
+		}
+	}
+	
 	// 设置资源管理器
 	cf.resourceManager.Set("config", cf.config)
 	cf.resourceManager.Set("parser", cf.parser)
 	cf.resourceManager.Set("generator", cf.generator)
+	if cf.deployManager != nil {
+		cf.resourceManager.Set("deployManager", cf.deployManager)
+	}
 }
 
 // GenerateWebsite 生成网站（主要功能入口）
@@ -293,6 +305,65 @@ func (cf *CreeperFacade) Shutdown() error {
 	cf.logger.Info("系统关闭完成")
 	
 	return nil
+}
+
+// initializeDeployManager 初始化部署管理器
+func (cf *CreeperFacade) initializeDeployManager() error {
+	cf.logger.Info("初始化部署管理器")
+	
+	// 加载部署配置
+	deployConfig, err := deploy.LoadDeployConfig(cf.config.Deploy.Config)
+	if err != nil {
+		return fmt.Errorf("加载部署配置失败: %w", err)
+	}
+	
+	// 创建部署管理器
+	cf.deployManager = deploy.NewDeployManager(deployConfig)
+	
+	// 初始化部署管理器
+	if err := cf.deployManager.Initialize(); err != nil {
+		return fmt.Errorf("初始化部署管理器失败: %w", err)
+	}
+	
+	cf.logger.Info("部署管理器初始化完成")
+	return nil
+}
+
+// DeployWebsite 部署网站
+func (cf *CreeperFacade) DeployWebsite() error {
+	if cf.deployManager == nil {
+		return fmt.Errorf("部署管理器未初始化，请检查部署配置")
+	}
+	
+	cf.logger.Info("开始部署网站")
+	
+	// 执行部署
+	if err := cf.deployManager.Deploy(cf.config.OutputDir); err != nil {
+		cf.logger.Error("网站部署失败:", err)
+		return fmt.Errorf("网站部署失败: %w", err)
+	}
+	
+	deploymentURL := cf.deployManager.GetDeploymentURL()
+	cf.logger.Info("网站部署完成，访问地址:", deploymentURL)
+	
+	return nil
+}
+
+// GetDeploymentStatus 获取部署状态
+func (cf *CreeperFacade) GetDeploymentStatus() (map[string]interface{}, error) {
+	if cf.deployManager == nil {
+		return nil, fmt.Errorf("部署管理器未初始化")
+	}
+	
+	return cf.deployManager.GetStatus()
+}
+
+// GetDeploymentURL 获取部署 URL
+func (cf *CreeperFacade) GetDeploymentURL() string {
+	if cf.deployManager == nil {
+		return ""
+	}
+	return cf.deployManager.GetDeploymentURL()
 }
 
 // saveSystemState 保存系统状态

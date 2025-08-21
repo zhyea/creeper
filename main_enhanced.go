@@ -215,6 +215,22 @@ func (app *Application) Serve(port int) error {
 	return nil
 }
 
+// Deploy 部署网站
+func (app *Application) Deploy() error {
+	app.logger.Info("开始部署网站")
+	
+	if err := app.facade.DeployWebsite(); err != nil {
+		return app.errorManager.HandleError(err, chain.SeverityError, "application", "deploy", nil)
+	}
+	
+	return nil
+}
+
+// GetDeploymentURL 获取部署 URL
+func (app *Application) GetDeploymentURL() string {
+	return app.facade.GetDeploymentURL()
+}
+
 // GetStatus 获取应用状态
 func (app *Application) GetStatus() map[string]interface{} {
 	status := app.facade.GetSystemStatus()
@@ -253,6 +269,7 @@ func main() {
 		generatorType = flag.String("generator", "enhanced", "生成器类型 (static|enhanced|minimal)")
 		verbose       = flag.Bool("verbose", false, "详细输出")
 		status        = flag.Bool("status", false, "显示系统状态")
+		deploy        = flag.Bool("deploy", false, "生成后自动部署")
 	)
 	flag.Parse()
 	
@@ -312,6 +329,21 @@ func main() {
 	if *verbose {
 		status := app.GetStatus()
 		fmt.Printf("📊 系统状态: %v\n", status)
+	}
+	
+	// 部署网站
+	if *deploy {
+		fmt.Printf("🚀 开始部署网站...\n")
+		
+		if err := app.Deploy(); err != nil {
+			log.Fatalf("网站部署失败: %v", err)
+		}
+		
+		deploymentURL := app.GetDeploymentURL()
+		if deploymentURL != "" {
+			fmt.Printf("✅ 网站部署完成！\n")
+			fmt.Printf("🌐 访问地址: %s\n", deploymentURL)
+		}
 	}
 	
 	// 启动服务器

@@ -42,18 +42,34 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+# 构建部署工具
+echo "🚀 构建部署工具..."
+go build -o deploy-tool cmd/deploy/main.go
+if [ $? -ne 0 ]; then
+    echo "❌ 部署工具构建失败"
+    exit 1
+fi
+
 echo "✅ 构建完成！"
 echo ""
 echo "🎉 可用工具："
 echo "  ./creeper                    # 主程序 - 生成静态站点"
 echo "  ./creeper -serve             # 生成并启动本地服务器"
 echo "  ./creeper -serve -port 3000  # 在指定端口启动服务器"
+echo "  ./creeper -deploy            # 生成并自动部署"
 echo "  ./cover-gen                  # 封面生成器"
+echo "  ./deploy-tool                # 部署工具"
 echo ""
 echo "📚 封面生成器使用示例："
 echo "  ./cover-gen -title \"我的小说\" -theme fantasy"
 echo "  ./cover-gen -title \"科幻故事\" -theme scifi -subtitle \"未来世界\""
 echo "  ./cover-gen -list-themes     # 查看所有可用主题"
+echo ""
+echo "🚀 部署工具使用示例："
+echo "  ./deploy-tool -init -type cloudflare  # 初始化 Cloudflare 配置"
+echo "  ./deploy-tool -config deploy-config.yaml -site dist  # 部署站点"
+echo "  ./deploy-tool -status                  # 查看部署状态"
+echo "  ./deploy-tool -list                    # 查看部署历史"
 echo ""
 echo "📚 示例小说文件已准备好，位于 novels/ 目录"
 echo "🌐 生成的站点将保存在 dist/ 目录"

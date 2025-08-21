@@ -1,0 +1,19 @@
+# Cloudflare Pages 部署配置示例
+type: cloudflare
+
+# Cloudflare 配置
+cloudflare:
+  account_id: "your-account-id"      # Cloudflare 账户 ID
+  project_name: "my-novel-site"      # Pages 项目名称
+  api_key: "your-api-key"            # API 密钥
+  email: "your-email@example.com"    # 注册邮箱
+  branch: "main"                     # 部署分支
+  framework: "none"                  # 框架类型
+  build_command: ""                  # 构建命令（静态站点不需要）
+  output_dir: "."                    # 输出目录
+
+# 部署选项
+options:
+  auto_deploy: true                  # 自动部署
+  preview: false                     # 预览模式
+  cache_control: "public, max-age=3600"  # 缓存控制
