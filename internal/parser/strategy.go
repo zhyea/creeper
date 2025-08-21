@@ -213,9 +213,11 @@ type StrategyManager struct {
 func NewStrategyManager(parser *Parser) *StrategyManager {
 	return &StrategyManager{
 		strategies: []ParseStrategy{
-			NewMultiVolumeStrategy(parser), // 优先检查多卷
-			NewMultiFileStrategy(parser),   // 然后检查多文件
-			NewSingleFileStrategy(parser),  // 最后检查单文件
+			NewTxtDirectoryStrategy(parser), // 优先检查 TXT 目录
+			NewTxtFileStrategy(parser),      // 然后检查 TXT 文件
+			NewMultiVolumeStrategy(parser),  // 接着检查多卷 Markdown
+			NewMultiFileStrategy(parser),    // 然后检查多文件 Markdown
+			NewSingleFileStrategy(parser),   // 最后检查单文件 Markdown
 		},
 	}
 }
