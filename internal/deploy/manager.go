@@ -63,22 +63,52 @@ type Deployer interface {
 
 // DeployManager 部署管理器
 type DeployManager struct {
-	config *DeployConfig
-	logger *common.Logger
-	deployer Deployer
+	config           *DeployConfig
+	logger           *common.Logger
+	deployer         Deployer
+	template         *BaseDeployTemplate
+	eventManager     *DeploymentEventManager
+	caretaker        *DeploymentCaretaker
+	originator       *DeploymentOriginator
+	fileIterator     FileIterator
 }
 
 // NewDeployManager 创建部署管理器
 func NewDeployManager(config *DeployConfig) *DeployManager {
+	// 创建事件管理器
+	eventManager := NewDeploymentEventManager()
+	
+	// 创建状态管理者
+	caretaker := NewDeploymentCaretaker(".creeper/deployments.json", 100)
+	
+	// 创建发起者
+	originator := NewDeploymentOriginator(caretaker)
+	
+	// 创建模板
+	template := NewBaseDeployTemplate()
+	
 	return &DeployManager{
-		config: config,
-		logger: common.GetLogger(),
+		config:       config,
+		logger:       common.GetLogger(),
+		template:     template,
+		eventManager: eventManager,
+		caretaker:    caretaker,
+		originator:   originator,
 	}
 }
 
 // Initialize 初始化部署器
 func (dm *DeployManager) Initialize() error {
 	dm.logger.Info("初始化部署管理器，类型:", dm.config.Type)
+
+	// 加载部署历史
+	if err := dm.caretaker.LoadHistory(); err != nil {
+		dm.logger.Warn("加载部署历史失败:", err)
+	}
+
+	// 添加默认观察者
+	dm.eventManager.Attach(NewConsoleObserver("console"))
+	dm.eventManager.Attach(NewMetricsObserver("metrics"))
 
 	switch dm.config.Type {
 	case CloudflarePages:
@@ -122,20 +152,59 @@ func (dm *DeployManager) Deploy(siteDir string) error {
 	dm.logger.Info("开始部署到", dm.config.Type)
 	dm.logger.Info("站点目录:", siteDir)
 
+	// 创建部署备忘录
+	memento := dm.originator.CreateMemento(string(dm.config.Type), siteDir)
+
+	// 发送部署开始事件
+	dm.eventManager.Notify(NewDeploymentEventBuilder(EventDeploymentStarted).
+		WithData("site_dir", siteDir).
+		WithData("deployment_type", dm.config.Type).
+		Build())
+
+	// 初始化文件迭代器
+	dm.fileIterator = NewDirectoryIterator(siteDir)
+	if err := dm.fileIterator.(*DirectoryIterator).LoadFiles(); err != nil {
+		dm.originator.SetError(memento, err)
+		return fmt.Errorf("加载文件列表失败: %w", err)
+	}
+
 	// 验证站点目录
 	if err := dm.validateSiteDir(siteDir); err != nil {
+		dm.originator.SetError(memento, err)
 		return fmt.Errorf("站点目录验证失败: %w", err)
 	}
 
-	// 执行部署
-	if err := dm.deployer.Deploy(siteDir); err != nil {
+	// 使用模板方法执行部署
+	if err := dm.template.DeployWithValidation(dm.deployer, siteDir); err != nil {
+		dm.originator.SetError(memento, err)
+		
+		// 发送部署失败事件
+		dm.eventManager.Notify(NewDeploymentEventBuilder(EventDeploymentFailed).
+			WithData("site_dir", siteDir).
+			WithError(err).
+			Build())
+		
 		return fmt.Errorf("部署失败: %w", err)
 	}
 
 	// 获取部署 URL
 	deploymentURL := dm.deployer.GetDeploymentURL()
-	dm.logger.Info("部署完成，访问地址:", deploymentURL)
+	
+	// 获取文件统计
+	fileCollection := NewFileCollection(dm.fileIterator)
+	stats := fileCollection.GetStats()
+	
+	// 设置成功状态
+	dm.originator.SetSuccess(memento, deploymentURL, stats["files"].(int), stats["total_size"].(int64))
+	
+	// 发送部署完成事件
+	dm.eventManager.Notify(NewDeploymentEventBuilder(EventDeploymentCompleted).
+		WithData("deployment_url", deploymentURL).
+		WithData("file_count", stats["files"]).
+		WithData("total_size", stats["total_size"]).
+		Build())
 
+	dm.logger.Info("部署完成，访问地址:", deploymentURL)
 	return nil
 }
 
@@ -154,6 +223,59 @@ func (dm *DeployManager) GetDeploymentURL() string {
 		return ""
 	}
 	return dm.deployer.GetDeploymentURL()
+}
+
+// GetDeploymentHistory 获取部署历史
+func (dm *DeployManager) GetDeploymentHistory() []*DeploymentMemento {
+	return dm.caretaker.GetAllMementos()
+}
+
+// GetDeploymentStats 获取部署统计
+func (dm *DeployManager) GetDeploymentStats() map[string]interface{} {
+	return dm.caretaker.GetDeploymentStats()
+}
+
+// GetEventMetrics 获取事件指标
+func (dm *DeployManager) GetEventMetrics() map[string]interface{} {
+	if metricsObserver, ok := dm.eventManager.observers["metrics"]; ok {
+		if mo, ok := metricsObserver.(*MetricsObserver); ok {
+			return mo.GetMetrics()
+		}
+	}
+	return make(map[string]interface{})
+}
+
+// AddObserver 添加观察者
+func (dm *DeployManager) AddObserver(observer DeploymentObserver) {
+	dm.eventManager.Attach(observer)
+}
+
+// RemoveObserver 移除观察者
+func (dm *DeployManager) RemoveObserver(observer DeploymentObserver) {
+	dm.eventManager.Detach(observer)
+}
+
+// GetObserverCount 获取观察者数量
+func (dm *DeployManager) GetObserverCount() int {
+	return dm.eventManager.GetObserverCount()
+}
+
+// DeployWithRetry 带重试的部署
+func (dm *DeployManager) DeployWithRetry(siteDir string, maxRetries int) error {
+	if dm.deployer == nil {
+		return fmt.Errorf("部署器未初始化")
+	}
+
+	return dm.template.DeployWithRetry(dm.deployer, siteDir, maxRetries)
+}
+
+// DeployWithRollback 带回滚的部署
+func (dm *DeployManager) DeployWithRollback(siteDir string) error {
+	if dm.deployer == nil {
+		return fmt.Errorf("部署器未初始化")
+	}
+
+	return dm.template.DeployWithRollback(dm.deployer, siteDir)
 }
 
 // validateSiteDir 验证站点目录
