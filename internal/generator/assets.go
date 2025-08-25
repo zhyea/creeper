@@ -405,6 +405,200 @@ body {
     font-size: 1.1rem;
 }
 
+/* 分类页面样式 */
+.page-header {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.page-header h1 {
+    font-size: 2rem;
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+}
+
+.page-header p {
+    color: #666;
+    font-size: 1.1rem;
+}
+
+.categories-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+.category-card {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.category-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+}
+
+.category-icon {
+    font-size: 2rem;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8f9fa;
+    border-radius: 50%;
+}
+
+.category-info {
+    flex: 1;
+}
+
+.category-name {
+    font-size: 1.2rem;
+    margin-bottom: 0.5rem;
+}
+
+.category-name a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+.category-name a:hover {
+    text-decoration: underline;
+}
+
+.category-description {
+    color: #666;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.category-stats {
+    font-size: 0.8rem;
+    color: #888;
+}
+
+.category-header {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.category-header .category-icon {
+    font-size: 3rem;
+    width: 80px;
+    height: 80px;
+}
+
+.category-header .category-info h1 {
+    margin-bottom: 0.5rem;
+}
+
+/* 作者页面样式 */
+.authors-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+.author-card {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.author-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+}
+
+.author-avatar {
+    font-size: 2rem;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--primary-color);
+    color: white;
+    border-radius: 50%;
+}
+
+.author-info {
+    flex: 1;
+}
+
+.author-name {
+    font-size: 1.2rem;
+    margin-bottom: 0.5rem;
+}
+
+.author-name a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+.author-name a:hover {
+    text-decoration: underline;
+}
+
+.author-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.author-stats span {
+    background: #f8f9fa;
+    padding: 0.2rem 0.5rem;
+    border-radius: 12px;
+}
+
+.author-header {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.author-header .author-avatar {
+    font-size: 3rem;
+    width: 80px;
+    height: 80px;
+}
+
+.author-header .author-info h1 {
+    margin-bottom: 0.5rem;
+}
+
+/* 小说分类标签 */
+.novel-category {
+    background: var(--secondary-color);
+    color: white;
+    padding: 0.2rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    display: inline-block;
+    margin-left: 0.5rem;
+}
+
 .chapter-content p {
     margin-bottom: 1.5rem;
     text-indent: 2em;
@@ -529,6 +723,11 @@ body {
     .btn {
         font-size: 0.85rem;
         padding: 0.6rem 1.2rem;
+    }
+    
+    .categories-grid,
+    .authors-grid {
+        grid-template-columns: 1fr;
     }
 }
 

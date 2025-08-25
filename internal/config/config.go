@@ -37,6 +37,15 @@ type SiteConfig struct {
 	Description string `yaml:"description"`
 	Author      string `yaml:"author"`
 	BaseURL     string `yaml:"base_url"`
+	Categories  []Category `yaml:"categories,omitempty"`
+}
+
+// Category 分类配置
+type Category struct {
+	Name        string `yaml:"name"`
+	Description string `yaml:"description"`
+	Color       string `yaml:"color"`
+	Icon        string `yaml:"icon"`
 }
 
 // ThemeConfig 主题配置

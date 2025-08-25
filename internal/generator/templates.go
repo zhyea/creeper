@@ -53,6 +53,8 @@ func (g *Generator) getBaseTemplate() string {
             </h1>
             <nav class="nav">
                 <a href="{{.Config.Site.BaseURL}}" class="nav-link">首页</a>
+                <a href="{{.Config.Site.BaseURL}}categories.html" class="nav-link">分类</a>
+                <a href="{{.Config.Site.BaseURL}}authors.html" class="nav-link">作者</a>
                 <div class="search-box">
                     <input type="text" id="search-input" placeholder="搜索小说或章节...">
                     <div id="search-results" class="search-results"></div>

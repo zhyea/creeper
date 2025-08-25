@@ -20,6 +20,8 @@ type Novel struct {
 	Author      string     `json:"author"`
 	Description string     `json:"description"`
 	Cover       string     `json:"cover"`
+	Category    string     `json:"category"`
+	Tags        []string   `json:"tags"`
 	CreatedAt   time.Time  `json:"created_at"`
 	UpdatedAt   time.Time  `json:"updated_at"`
 	Chapters    []*Chapter `json:"chapters"`
@@ -249,6 +251,13 @@ func (p *Parser) parseMetaLine(novel *Novel, line string) {
 		novel.Description = value
 	case "cover", "封面":
 		novel.Cover = value
+	case "category", "分类":
+		novel.Category = value
+	case "tags", "标签":
+		novel.Tags = strings.Split(value, ",")
+		for i, tag := range novel.Tags {
+			novel.Tags[i] = strings.TrimSpace(tag)
+		}
 	}
 }
 

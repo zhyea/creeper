@@ -9,9 +9,13 @@ import (
 type TemplateType string
 
 const (
-	IndexTemplate   TemplateType = "index"
-	NovelTemplate   TemplateType = "novel"
-	ChapterTemplate TemplateType = "chapter"
+	IndexTemplate      TemplateType = "index"
+	NovelTemplate      TemplateType = "novel"
+	ChapterTemplate    TemplateType = "chapter"
+	CategoryListTemplate TemplateType = "category-list"
+	CategoryTemplate    TemplateType = "category"
+	AuthorListTemplate  TemplateType = "author-list"
+	AuthorTemplate      TemplateType = "author"
 )
 
 // TemplateBuilder 模板构建器接口
@@ -72,6 +76,9 @@ func (b *IndexTemplateBuilder) Build(funcMap template.FuncMap) (*template.Templa
             <div class="novel-stats">
                 <span class="chapter-count">{{len .Chapters}} 章</span>
                 <span class="word-count">{{totalWordCount .Chapters}} 总字数</span>
+                {{if .Category}}
+                <span class="novel-category">{{.Category}}</span>
+                {{end}}
             </div>
         </div>
     </div>
@@ -225,6 +232,10 @@ func NewTemplateFactory(baseTemplate string) *TemplateFactory {
 	factory.RegisterBuilder(NewIndexTemplateBuilder(baseTemplate))
 	factory.RegisterBuilder(NewNovelTemplateBuilder(baseTemplate))
 	factory.RegisterBuilder(NewChapterTemplateBuilder(baseTemplate))
+	factory.RegisterBuilder(NewCategoryListTemplateBuilder(baseTemplate))
+	factory.RegisterBuilder(NewCategoryTemplateBuilder(baseTemplate))
+	factory.RegisterBuilder(NewAuthorListTemplateBuilder(baseTemplate))
+	factory.RegisterBuilder(NewAuthorTemplateBuilder(baseTemplate))
 	
 	return factory
 }
@@ -251,4 +262,236 @@ func (f *TemplateFactory) GetAvailableTypes() []TemplateType {
 		types = append(types, templateType)
 	}
 	return types
+}
+
+// CategoryListTemplateBuilder 分类列表模板构建器
+type CategoryListTemplateBuilder struct {
+	*BaseTemplateBuilder
+}
+
+func NewCategoryListTemplateBuilder(baseTemplate string) *CategoryListTemplateBuilder {
+	return &CategoryListTemplateBuilder{
+		BaseTemplateBuilder: &BaseTemplateBuilder{
+			templateType: CategoryListTemplate,
+			baseTemplate: baseTemplate,
+		},
+	}
+}
+
+func (b *CategoryListTemplateBuilder) Build(funcMap template.FuncMap) (*template.Template, error) {
+	categoryListContent := `
+{{define "content"}}
+<div class="page-header">
+    <h1>分类浏览</h1>
+    <p>按分类浏览所有小说</p>
+</div>
+
+<div class="categories-grid">
+    {{range .Categories}}
+    <div class="category-card" style="border-left: 4px solid {{.color}};">
+        <div class="category-icon">{{.icon}}</div>
+        <div class="category-info">
+            <h3 class="category-name">
+                <a href="{{$.Config.Site.BaseURL}}categories/{{.name}}.html">{{.name}}</a>
+            </h3>
+            <p class="category-description">{{.description}}</p>
+            <div class="category-stats">
+                <span class="novel-count">{{.count}} 部小说</span>
+            </div>
+        </div>
+    </div>
+    {{end}}
+</div>
+{{end}}`
+
+	templateContent := b.baseTemplate + categoryListContent
+	return template.New("category-list").Funcs(funcMap).Parse(templateContent)
+}
+
+// CategoryTemplateBuilder 分类详情模板构建器
+type CategoryTemplateBuilder struct {
+	*BaseTemplateBuilder
+}
+
+func NewCategoryTemplateBuilder(baseTemplate string) *CategoryTemplateBuilder {
+	return &CategoryTemplateBuilder{
+		BaseTemplateBuilder: &BaseTemplateBuilder{
+			templateType: CategoryTemplate,
+			baseTemplate: baseTemplate,
+		},
+	}
+}
+
+func (b *CategoryTemplateBuilder) Build(funcMap template.FuncMap) (*template.Template, error) {
+	categoryContent := `
+{{define "content"}}
+<div class="page-header">
+    <nav class="breadcrumb">
+        <a href="{{$.Config.Site.BaseURL}}">首页</a>
+        <span class="separator">/</span>
+        <a href="{{$.Config.Site.BaseURL}}categories.html">分类</a>
+        <span class="separator">/</span>
+        <span class="current">{{.Category}}</span>
+    </nav>
+    
+    <div class="category-header">
+        <div class="category-icon" style="color: {{.Color}};">{{.Icon}}</div>
+        <div class="category-info">
+            <h1>{{.Category}}</h1>
+            <p>{{.Description}}</p>
+            <div class="category-stats">
+                <span class="novel-count">{{.Count}} 部小说</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="novels-grid">
+    {{range .Novels}}
+    <div class="novel-card">
+        <div class="novel-cover">
+            <img src="{{$.Config.Site.BaseURL}}novels/{{sanitizeFileName .Title}}/cover.svg" alt="{{.Title}} 封面" 
+                 onerror="this.src='{{$.Config.Site.BaseURL}}static/images/default-cover.svg'">
+        </div>
+        <div class="novel-info">
+            <h3 class="novel-title">
+                <a href="{{$.Config.Site.BaseURL}}novels/{{sanitizeFileName .Title}}/">{{.Title}}</a>
+            </h3>
+            {{if .Author}}
+            <p class="novel-author">作者：{{.Author}}</p>
+            {{end}}
+            {{if .Description}}
+            <p class="novel-description">{{.Description}}</p>
+            {{end}}
+            <div class="novel-stats">
+                <span class="chapter-count">{{len .Chapters}} 章</span>
+                <span class="word-count">{{totalWordCount .Chapters}} 总字数</span>
+            </div>
+        </div>
+    </div>
+    {{end}}
+</div>
+{{end}}`
+
+	templateContent := b.baseTemplate + categoryContent
+	return template.New("category").Funcs(funcMap).Parse(templateContent)
+}
+
+// AuthorListTemplateBuilder 作者列表模板构建器
+type AuthorListTemplateBuilder struct {
+	*BaseTemplateBuilder
+}
+
+func NewAuthorListTemplateBuilder(baseTemplate string) *AuthorListTemplateBuilder {
+	return &AuthorListTemplateBuilder{
+		BaseTemplateBuilder: &BaseTemplateBuilder{
+			templateType: AuthorListTemplate,
+			baseTemplate: baseTemplate,
+		},
+	}
+}
+
+func (b *AuthorListTemplateBuilder) Build(funcMap template.FuncMap) (*template.Template, error) {
+	authorListContent := `
+{{define "content"}}
+<div class="page-header">
+    <h1>作者作品</h1>
+    <p>按作者浏览所有作品</p>
+</div>
+
+<div class="authors-grid">
+    {{range .Authors}}
+    <div class="author-card">
+        <div class="author-avatar">👤</div>
+        <div class="author-info">
+            <h3 class="author-name">
+                <a href="{{$.Config.Site.BaseURL}}authors/{{.name}}.html">{{.name}}</a>
+            </h3>
+            <div class="author-stats">
+                <span class="novel-count">{{.count}} 部作品</span>
+                <span class="total-words">{{formatWordCount .totalWords}} 总字数</span>
+                {{if .lastUpdated}}
+                <span class="last-updated">最后更新：{{.lastUpdated}}</span>
+                {{end}}
+            </div>
+        </div>
+    </div>
+    {{end}}
+</div>
+{{end}}`
+
+	templateContent := b.baseTemplate + authorListContent
+	return template.New("author-list").Funcs(funcMap).Parse(templateContent)
+}
+
+// AuthorTemplateBuilder 作者详情模板构建器
+type AuthorTemplateBuilder struct {
+	*BaseTemplateBuilder
+}
+
+func NewAuthorTemplateBuilder(baseTemplate string) *AuthorTemplateBuilder {
+	return &AuthorTemplateBuilder{
+		BaseTemplateBuilder: &BaseTemplateBuilder{
+			templateType: AuthorTemplate,
+			baseTemplate: baseTemplate,
+		},
+	}
+}
+
+func (b *AuthorTemplateBuilder) Build(funcMap template.FuncMap) (*template.Template, error) {
+	authorContent := `
+{{define "content"}}
+<div class="page-header">
+    <nav class="breadcrumb">
+        <a href="{{$.Config.Site.BaseURL}}">首页</a>
+        <span class="separator">/</span>
+        <a href="{{$.Config.Site.BaseURL}}authors.html">作者</a>
+        <span class="separator">/</span>
+        <span class="current">{{.Author}}</span>
+    </nav>
+    
+    <div class="author-header">
+        <div class="author-avatar">👤</div>
+        <div class="author-info">
+            <h1>{{.Author}}</h1>
+            <div class="author-stats">
+                <span class="novel-count">{{.Count}} 部作品</span>
+                <span class="total-words">{{formatWordCount .TotalWords}} 总字数</span>
+                {{if .LastUpdated}}
+                <span class="last-updated">最后更新：{{.LastUpdated}}</span>
+                {{end}}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="novels-grid">
+    {{range .Novels}}
+    <div class="novel-card">
+        <div class="novel-cover">
+            <img src="{{$.Config.Site.BaseURL}}novels/{{sanitizeFileName .Title}}/cover.svg" alt="{{.Title}} 封面" 
+                 onerror="this.src='{{$.Config.Site.BaseURL}}static/images/default-cover.svg'">
+        </div>
+        <div class="novel-info">
+            <h3 class="novel-title">
+                <a href="{{$.Config.Site.BaseURL}}novels/{{sanitizeFileName .Title}}/">{{.Title}}</a>
+            </h3>
+            {{if .Category}}
+            <p class="novel-category">分类：{{.Category}}</p>
+            {{end}}
+            {{if .Description}}
+            <p class="novel-description">{{.Description}}</p>
+            {{end}}
+            <div class="novel-stats">
+                <span class="chapter-count">{{len .Chapters}} 章</span>
+                <span class="word-count">{{totalWordCount .Chapters}} 总字数</span>
+            </div>
+        </div>
+    </div>
+    {{end}}
+</div>
+{{end}}`
+
+	templateContent := b.baseTemplate + authorContent
+	return template.New("author").Funcs(funcMap).Parse(templateContent)
 }

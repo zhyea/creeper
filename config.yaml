@@ -1,4 +1,4 @@
-# Creeper 静态小说站点生成器配置文件
+# Creeper 静态小说站点配置
 
 # 站点基本信息
 site:
@@ -6,30 +6,59 @@ site:
   description: "静态小说阅读站点"
   author: "作者"
   base_url: "/"
+  categories:
+    - name: "科幻"
+      description: "探索未来科技与宇宙奥秘的科幻小说"
+      color: "#3498db"
+      icon: "🚀"
+    - name: "现代"
+      description: "反映现代都市生活的现实主义小说"
+      color: "#2ecc71"
+      icon: "🏢"
+    - name: "武侠"
+      description: "传统武侠文化与江湖恩怨的武侠小说"
+      color: "#e74c3c"
+      icon: "⚔️"
+    - name: "玄幻"
+      description: "融合东方玄幻元素的奇幻小说"
+      color: "#9b59b6"
+      icon: "🐉"
+    - name: "历史"
+      description: "基于历史背景的历史小说"
+      color: "#f39c12"
+      icon: "📚"
+    - name: "悬疑"
+      description: "充满谜团与推理的悬疑小说"
+      color: "#34495e"
+      icon: "🔍"
+    - name: "言情"
+      description: "浪漫爱情故事"
+      color: "#e91e63"
+      icon: "💕"
 
 # 目录配置
-input_dir: "novels"    # 小说文件输入目录
-output_dir: "dist"     # 静态站点输出目录
+input_dir: "novels"
+output_dir: "dist"
 
 # 主题配置
 theme:
   name: "default"
-  primary_color: "#2c3e50"      # 主色调
-  secondary_color: "#3498db"    # 辅色调
-  background_color: "#ffffff"   # 背景色
-  text_color: "#333333"         # 文字颜色
+  primary_color: "#2c3e50"
+  secondary_color: "#3498db"
+  background_color: "#ffffff"
+  text_color: "#333333"
   font_family: "'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif"
   font_size: "16px"
   line_height: "1.6"
 
 # 构建配置
 build:
-  minify_html: true    # 压缩HTML
-  minify_css: true     # 压缩CSS
-  minify_js: true      # 压缩JavaScript
+  minify_html: true
+  minify_css: true
+  minify_js: true
 
-# 部署配置
+# 部署配置（可选）
 deploy:
-  enabled: false       # 是否启用部署
-  type: "cloudflare"   # 部署类型
-  config: "deploy-config.yaml"  # 部署配置文件路径
+  enabled: false
+  type: "cloudflare"
+  config: "deploy-config.yaml"

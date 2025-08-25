@@ -131,8 +131,7 @@ func (ta *TxtAdapter) PostprocessContent(content string) string {
 
 // isDialogue 判断是否为对话
 func (ta *TxtAdapter) isDialogue(line string) bool {
-	return strings.HasPrefix(line, """) || strings.HasPrefix(line, "\"") ||
-		   strings.HasPrefix(line, "'") || strings.HasPrefix(line, "'")
+	return strings.HasPrefix(line, "\"") || strings.HasPrefix(line, "'")
 }
 
 // isEmphasis 判断是否需要强调
