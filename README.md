@@ -13,6 +13,8 @@ Creeper 是一个用 Go 语言开发的静态小说站点生成器，能够读�
 - ⚡ **快速生成**：高效的静态站点生成
 - 🚀 **一键部署**：支持 Cloudflare Pages、GitHub Pages 等平台部署
 - 🏛️ **企业级架构**：应用 20+ 种设计模式，高度模块化
+- 📚 **分类管理**：支持科幻、武侠、现代等分类浏览
+- 👥 **作者集合**：按作者组织作品，显示统计信息
 
 ## 🚀 快速开始
 
@@ -80,6 +82,8 @@ Creeper 支持 **Markdown** 和 **TXT** 两种文件格式，多种组织方式�
 title: 我的小说
 author: 作者姓名
 description: 小说简介
+category: 科幻
+tags: 太空, 科技, 冒险
 ---
 
 # 第一卷 起源
@@ -107,6 +111,8 @@ description: 小说简介
 书名：我的小说
 作者：作者姓名
 简介：小说简介内容
+分类：科幻
+标签：太空, 科技, 冒险
 
 =====================================
 
@@ -323,6 +329,28 @@ deploy:
 
 你可以通过修改配置文件中的 `theme` 部分来定制站点外观：
 
+### 分类配置
+
+在 `config.yaml` 中定义分类：
+
+```yaml
+site:
+  categories:
+    - name: "科幻"
+      description: "探索未来科技与宇宙奥秘的科幻小说"
+      color: "#3498db"
+      icon: "🚀"
+    - name: "武侠"
+      description: "传统武侠文化与江湖恩怨的武侠小说"
+      color: "#e74c3c"
+      icon: "⚔️"
+    - name: "现代"
+      description: "反映现代都市生活的现实主义小说"
+      color: "#2ecc71"
+      icon: "🏢"
+    # 更多分类...
+```
+
 - `primary_color`: 主色调（导航栏、按钮等）
 - `secondary_color`: 辅色调（链接、强调色等）
 - `background_color`: 背景色
@@ -398,6 +426,16 @@ deploy:
 ```
 dist/
 ├── index.html              # 首页
+├── categories.html         # 分类列表页
+├── categories/             # 分类详情页
+│   ├── 科幻.html
+│   ├── 武侠.html
+│   └── ...
+├── authors.html            # 作者列表页
+├── authors/                # 作者详情页
+│   ├── 作者1.html
+│   ├── 作者2.html
+│   └── ...
 ├── novels/                 # 小说目录
 │   ├── 小说1/
 │   │   ├── index.html      # 小说目录页
