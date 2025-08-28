@@ -2,6 +2,7 @@ package parser
 
 import (
 	"fmt"
+	"strings"
 )
 
 // ParseState 解析状态接口
@@ -12,17 +13,17 @@ type ParseState interface {
 
 // ParseContext 解析上下文
 type ParseContext struct {
-	novel           *Novel
-	currentChapter  *Chapter
-	contentLines    []string
-	chapterID       int
-	volumeID        int
-	sectionID       int
-	state           ParseState
-	txtFormat       *TxtFormat
-	chapterTypes    []ChapterType
-	inMetadata      bool
-	metadataLines   int
+	novel          *Novel
+	currentChapter *Chapter
+	contentLines   []string
+	chapterID      int
+	volumeID       int
+	sectionID      int
+	state          ParseState
+	txtFormat      *TxtFormat
+	chapterTypes   []ChapterType
+	inMetadata     bool
+	metadataLines  int
 }
 
 // NewParseContext 创建解析上下文
@@ -33,10 +34,10 @@ func NewParseContext(novel *Novel) *ParseContext {
 		txtFormat:    NewTxtFormat(),
 		chapterTypes: make([]ChapterType, 0),
 	}
-	
+
 	// 设置初始状态
 	ctx.SetState(NewMetadataState())
-	
+
 	return ctx
 }
 
@@ -81,12 +82,12 @@ func (ms *MetadataState) GetStateName() string {
 
 func (ms *MetadataState) HandleLine(context *ParseContext, line string, lineNumber int) error {
 	line = strings.TrimSpace(line)
-	
+
 	// 空行跳过
 	if line == "" {
 		return nil
 	}
-	
+
 	// 检查是否为分隔符，如果是则切换到内容状态
 	if context.txtFormat.IsSeparator(line) {
 		context.inMetadata = false
@@ -94,7 +95,7 @@ func (ms *MetadataState) HandleLine(context *ParseContext, line string, lineNumb
 		context.SetState(NewContentState())
 		return nil
 	}
-	
+
 	// 尝试提取元数据
 	if key, value := context.txtFormat.ExtractMetadata(line); key != "" {
 		switch key {
@@ -107,13 +108,13 @@ func (ms *MetadataState) HandleLine(context *ParseContext, line string, lineNumb
 		}
 		return nil
 	}
-	
+
 	// 如果不是元数据且超过一定行数，切换到内容状态
 	if lineNumber > 20 {
 		context.SetState(NewContentState())
 		return context.state.HandleLine(context, line, lineNumber)
 	}
-	
+
 	return nil
 }
 
@@ -130,19 +131,19 @@ func (cs *ContentState) GetStateName() string {
 
 func (cs *ContentState) HandleLine(context *ParseContext, line string, lineNumber int) error {
 	line = strings.TrimSpace(line)
-	
+
 	// 检查分隔符
 	if context.txtFormat.IsSeparator(line) {
 		return nil
 	}
-	
+
 	// 识别章节类型
 	chapterType, title := context.txtFormat.IdentifyChapterType(line)
-	
+
 	if chapterType != ChapterTypeUnknown {
 		// 保存上一章节
 		context.SaveCurrentChapter()
-		
+
 		// 更新计数器
 		switch chapterType {
 		case ChapterTypeVolume:
@@ -155,17 +156,17 @@ func (cs *ContentState) HandleLine(context *ParseContext, line string, lineNumbe
 		case ChapterTypeSection:
 			context.sectionID++
 		}
-		
+
 		// 创建新章节
 		context.currentChapter = &Chapter{
 			ID:    len(context.novel.Chapters) + 1,
 			Title: title,
 			Path:  fmt.Sprintf("chapter-%d", len(context.novel.Chapters)+1),
 		}
-		
+
 		// 记录章节类型
 		context.chapterTypes = append(context.chapterTypes, chapterType)
-		
+
 		// 根据章节类型切换状态
 		switch chapterType {
 		case ChapterTypePrologue:
@@ -177,17 +178,17 @@ func (cs *ContentState) HandleLine(context *ParseContext, line string, lineNumbe
 		default:
 			context.SetState(NewChapterState())
 		}
-		
+
 		return nil
 	}
-	
+
 	// 普通内容行
 	if line != "" {
 		context.contentLines = append(context.contentLines, line)
 	} else {
 		context.contentLines = append(context.contentLines, "")
 	}
-	
+
 	return nil
 }
 
@@ -277,14 +278,14 @@ func (stp *StatefulTxtParser) Subscribe(observer ParseObserver) {
 // ParseWithState 使用状态模式解析
 func (stp *StatefulTxtParser) ParseWithState(novel *Novel, lines []string) error {
 	context := NewParseContext(novel)
-	
+
 	stp.notifier.NotifyObservers(&ParseEventData{
 		Event:   ParseEventStart,
 		Message: fmt.Sprintf("开始状态化解析: %s", novel.Title),
 	})
-	
+
 	totalLines := len(lines)
-	
+
 	for i, line := range lines {
 		if err := context.HandleLine(line, i); err != nil {
 			stp.notifier.NotifyObservers(&ParseEventData{
@@ -294,7 +295,7 @@ func (stp *StatefulTxtParser) ParseWithState(novel *Novel, lines []string) error
 			})
 			return err
 		}
-		
+
 		// 报告进度
 		if i%100 == 0 || i == totalLines-1 {
 			progress := float64(i+1) / float64(totalLines) * 100
@@ -305,14 +306,14 @@ func (stp *StatefulTxtParser) ParseWithState(novel *Novel, lines []string) error
 			})
 		}
 	}
-	
+
 	// 保存最后一章节
 	context.SaveCurrentChapter()
-	
+
 	stp.notifier.NotifyObservers(&ParseEventData{
 		Event:   ParseEventComplete,
 		Message: fmt.Sprintf("解析完成: 共%d章", len(novel.Chapters)),
 	})
-	
+
 	return nil
 }

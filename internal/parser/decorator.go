@@ -2,6 +2,7 @@ package parser
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"time"
 )
@@ -41,18 +42,18 @@ func NewLoggingParserDecorator(decorator ParserDecorator, observer ParseObserver
 
 func (lpd *LoggingParserDecorator) ParseNovel(path string) (*Novel, error) {
 	start := time.Now()
-	
+
 	if lpd.observer != nil {
 		lpd.observer.OnParseEvent(&ParseEventData{
 			Event:   ParseEventStart,
 			Message: fmt.Sprintf("开始解析小说: %s", path),
 		})
 	}
-	
+
 	novel, err := lpd.ParserDecorator.ParseNovel(path)
-	
+
 	duration := time.Since(start)
-	
+
 	if err != nil {
 		if lpd.observer != nil {
 			lpd.observer.OnParseEvent(&ParseEventData{
@@ -63,14 +64,14 @@ func (lpd *LoggingParserDecorator) ParseNovel(path string) (*Novel, error) {
 		}
 		return nil, err
 	}
-	
+
 	if lpd.observer != nil {
 		lpd.observer.OnParseEvent(&ParseEventData{
 			Event:   ParseEventComplete,
 			Message: fmt.Sprintf("解析完成: %s (耗时: %v, %d章)", novel.Title, duration, len(novel.Chapters)),
 		})
 	}
-	
+
 	return novel, nil
 }
 
@@ -108,7 +109,7 @@ func (cpd *CachingParserDecorator) ParseNovel(path string) (*Novel, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// 检查缓存
 	if cached, exists := cpd.cache[path]; exists {
 		if cached.FileInfo.ModTime.Equal(fileInfo.ModTime) && cached.FileInfo.Size == fileInfo.Size {
@@ -116,20 +117,20 @@ func (cpd *CachingParserDecorator) ParseNovel(path string) (*Novel, error) {
 			return cpd.cloneNovel(cached.Novel), nil
 		}
 	}
-	
+
 	// 缓存无效或不存在，重新解析
 	novel, err := cpd.ParserDecorator.ParseNovel(path)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// 更新缓存
 	cpd.cache[path] = &CachedNovel{
 		Novel:     cpd.cloneNovel(novel),
 		Timestamp: time.Now(),
 		FileInfo:  fileInfo,
 	}
-	
+
 	return novel, nil
 }
 
@@ -139,7 +140,7 @@ func (cpd *CachingParserDecorator) getFileInfo(path string) (FileInfo, error) {
 	if err != nil {
 		return FileInfo{}, err
 	}
-	
+
 	return FileInfo{
 		Path:    path,
 		ModTime: info.ModTime(),
@@ -159,7 +160,7 @@ func (cpd *CachingParserDecorator) cloneNovel(original *Novel) *Novel {
 		Path:        original.Path,
 		Chapters:    make([]*Chapter, len(original.Chapters)),
 	}
-	
+
 	for i, chapter := range original.Chapters {
 		clone.Chapters[i] = &Chapter{
 			ID:          chapter.ID,
@@ -171,7 +172,7 @@ func (cpd *CachingParserDecorator) cloneNovel(original *Novel) *Novel {
 			Path:        chapter.Path,
 		}
 	}
-	
+
 	return clone
 }
 
@@ -216,20 +217,20 @@ func (vpd *ValidationParserDecorator) ParseNovel(path string) (*Novel, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// 验证小说内容
 	vpd.validator.ClearErrors()
-	
+
 	for _, chapter := range novel.Chapters {
 		// 根据章节标题推断类型
 		chapterType := vpd.inferChapterType(chapter.Title)
 		element := NewStandardChapter(chapter, chapterType)
-		
+
 		if err := element.Accept(vpd.validator); err != nil {
 			return nil, fmt.Errorf("验证章节失败: %w", err)
 		}
 	}
-	
+
 	// 检查验证错误
 	if vpd.validator.HasErrors() {
 		errors := vpd.validator.GetErrors()
@@ -238,30 +239,30 @@ func (vpd *ValidationParserDecorator) ParseNovel(path string) (*Novel, error) {
 			fmt.Printf("   - %s\n", err)
 		}
 	}
-	
+
 	return novel, nil
 }
 
 // inferChapterType 推断章节类型
 func (vpd *ValidationParserDecorator) inferChapterType(title string) ChapterType {
 	title = strings.ToLower(title)
-	
+
 	if strings.Contains(title, "序") || strings.Contains(title, "楔子") || strings.Contains(title, "引子") {
 		return ChapterTypePrologue
 	}
-	
+
 	if strings.Contains(title, "后记") || strings.Contains(title, "尾声") || strings.Contains(title, "结语") {
 		return ChapterTypeEpilogue
 	}
-	
+
 	if strings.Contains(title, "卷") || strings.Contains(title, "volume") {
 		return ChapterTypeVolume
 	}
-	
+
 	if strings.Contains(title, "节") || strings.Contains(title, "section") {
 		return ChapterTypeSection
 	}
-	
+
 	return ChapterTypeChapter
 }
 
@@ -275,7 +276,7 @@ type EnhancedParser struct {
 // NewEnhancedParser 创建增强解析器
 func NewEnhancedParser() *EnhancedParser {
 	baseParser := New()
-	
+
 	return &EnhancedParser{
 		baseParser: baseParser,
 		decorators: make([]func(ParserDecorator) ParserDecorator, 0),
@@ -311,15 +312,15 @@ func (ep *EnhancedParser) Build() ParserDecorator {
 	if ep.finalDecorator != nil {
 		return ep.finalDecorator
 	}
-	
+
 	// 从基础解析器开始
-	decorator := NewBaseParserDecorator(ep.baseParser)
-	
+	var decorator ParserDecorator = NewBaseParserDecorator(ep.baseParser)
+
 	// 应用所有装饰器
 	for _, decoratorFunc := range ep.decorators {
 		decorator = decoratorFunc(decorator)
 	}
-	
+
 	ep.finalDecorator = decorator
 	return decorator
 }

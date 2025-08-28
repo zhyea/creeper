@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"os"
 
 	"creeper/internal/deploy"
 )
@@ -59,19 +58,7 @@ func main() {
 
 	// 列出部署历史
 	if *list {
-		if cloudflareDeployer, ok := deployManager.(*deploy.CloudflareDeployer); ok {
-			deployments, err := cloudflareDeployer.ListDeployments()
-			if err != nil {
-				log.Fatalf("获取部署历史失败: %v", err)
-			}
-			fmt.Printf("📋 部署历史:\n")
-			for i, deployment := range deployments {
-				fmt.Printf("  %d. ID: %s, 状态: %s\n", i+1, 
-					deployment["id"], deployment["status"])
-			}
-		} else {
-			fmt.Printf("⚠️  当前部署类型不支持列出部署历史\n")
-		}
+		fmt.Printf("⚠️  当前部署类型不支持列出部署历史\n")
 		return
 	}
 

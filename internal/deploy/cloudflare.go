@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"creeper/internal/common"
@@ -133,7 +132,7 @@ func (cd *CloudflareDeployer) validateSiteDir(siteDir string) error {
 func (cd *CloudflareDeployer) createDeployment(siteDir string) (string, error) {
 	cd.logger.Info("创建 Cloudflare Pages 部署")
 
-	url := fmt.Sprintf("https://api.cloudflare.com/client/v4/accounts/%s/pages/projects/%s/deployments", 
+	url := fmt.Sprintf("https://api.cloudflare.com/client/v4/accounts/%s/pages/projects/%s/deployments",
 		cd.config.AccountID, cd.config.ProjectName)
 
 	payload := map[string]interface{}{
@@ -244,7 +243,7 @@ func (cd *CloudflareDeployer) getAllFiles(dir string) ([]string, error) {
 
 // uploadBatch 上传一批文件
 func (cd *CloudflareDeployer) uploadBatch(deploymentID string, files []string) error {
-	url := fmt.Sprintf("https://api.cloudflare.com/client/v4/accounts/%s/pages/projects/%s/deployments/%s/files", 
+	url := fmt.Sprintf("https://api.cloudflare.com/client/v4/accounts/%s/pages/projects/%s/deployments/%s/files",
 		cd.config.AccountID, cd.config.ProjectName, deploymentID)
 
 	var buf bytes.Buffer
@@ -253,7 +252,7 @@ func (cd *CloudflareDeployer) uploadBatch(deploymentID string, files []string) e
 	// 添加文件
 	for _, file := range files {
 		filePath := filepath.Join(cd.config.OutputDir, file)
-		
+
 		// 读取文件内容
 		content, err := os.ReadFile(filePath)
 		if err != nil {
@@ -302,7 +301,7 @@ func (cd *CloudflareDeployer) uploadBatch(deploymentID string, files []string) e
 func (cd *CloudflareDeployer) finalizeDeployment(deploymentID string) error {
 	cd.logger.Info("完成部署")
 
-	url := fmt.Sprintf("https://api.cloudflare.com/client/v4/accounts/%s/pages/projects/%s/deployments/%s", 
+	url := fmt.Sprintf("https://api.cloudflare.com/client/v4/accounts/%s/pages/projects/%s/deployments/%s",
 		cd.config.AccountID, cd.config.ProjectName, deploymentID)
 
 	payload := map[string]interface{}{
@@ -343,7 +342,7 @@ func (cd *CloudflareDeployer) finalizeDeployment(deploymentID string) error {
 
 // GetDeploymentStatus 获取部署状态
 func (cd *CloudflareDeployer) GetDeploymentStatus(deploymentID string) (map[string]interface{}, error) {
-	url := fmt.Sprintf("https://api.cloudflare.com/client/v4/accounts/%s/pages/projects/%s/deployments/%s", 
+	url := fmt.Sprintf("https://api.cloudflare.com/client/v4/accounts/%s/pages/projects/%s/deployments/%s",
 		cd.config.AccountID, cd.config.ProjectName, deploymentID)
 
 	req, err := http.NewRequest("GET", url, nil)
@@ -379,7 +378,7 @@ func (cd *CloudflareDeployer) GetDeploymentStatus(deploymentID string) (map[stri
 
 // ListDeployments 列出部署历史
 func (cd *CloudflareDeployer) ListDeployments() ([]map[string]interface{}, error) {
-	url := fmt.Sprintf("https://api.cloudflare.com/client/v4/accounts/%s/pages/projects/%s/deployments", 
+	url := fmt.Sprintf("https://api.cloudflare.com/client/v4/accounts/%s/pages/projects/%s/deployments",
 		cd.config.AccountID, cd.config.ProjectName)
 
 	req, err := http.NewRequest("GET", url, nil)
@@ -416,10 +415,36 @@ func (cd *CloudflareDeployer) ListDeployments() ([]map[string]interface{}, error
 
 	deployments := result["result"].([]interface{})
 	resultList := make([]map[string]interface{}, len(deployments))
-	
+
 	for i, deployment := range deployments {
 		resultList[i] = deployment.(map[string]interface{})
 	}
 
 	return resultList, nil
+}
+
+// GetStatus 获取部署状态
+func (cd *CloudflareDeployer) GetStatus() (map[string]interface{}, error) {
+	// 获取最新的部署状态
+	deployments, err := cd.ListDeployments()
+	if err != nil {
+		return nil, err
+	}
+
+	if len(deployments) == 0 {
+		return map[string]interface{}{
+			"status":  "no_deployments",
+			"message": "没有找到部署记录",
+		}, nil
+	}
+
+	latestDeployment := deployments[0]
+	deploymentID := latestDeployment["id"].(string)
+
+	return cd.GetDeploymentStatus(deploymentID)
+}
+
+// GetDeploymentURL 获取部署URL
+func (cd *CloudflareDeployer) GetDeploymentURL() string {
+	return fmt.Sprintf("https://%s.pages.dev", cd.config.ProjectName)
 }

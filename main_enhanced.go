@@ -6,17 +6,18 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
-	"creeper/internal/config"
-	"creeper/internal/facade"
-	"creeper/internal/mediator"
-	"creeper/internal/factory"
 	"creeper/internal/chain"
-	"creeper/internal/di"
 	"creeper/internal/common"
-	"creeper/internal/parser"
+	"creeper/internal/config"
+	"creeper/internal/di"
+	"creeper/internal/facade"
+	"creeper/internal/factory"
 	"creeper/internal/generator"
+	"creeper/internal/mediator"
+	"creeper/internal/parser"
 )
 
 // Application 应用程序
@@ -38,37 +39,37 @@ func NewApplication() *Application {
 // Initialize 初始化应用程序
 func (app *Application) Initialize(configPath string, generatorType factory.GeneratorType) error {
 	app.logger.Info("初始化 Creeper 应用程序")
-	
+
 	// 1. 初始化依赖注入容器
 	if err := app.initializeDI(configPath, generatorType); err != nil {
 		return fmt.Errorf("初始化依赖注入失败: %w", err)
 	}
-	
+
 	// 2. 初始化错误处理链
 	app.initializeErrorHandling()
-	
+
 	// 3. 初始化中介者
 	if err := app.initializeMediator(); err != nil {
 		return fmt.Errorf("初始化中介者失败: %w", err)
 	}
-	
+
 	// 4. 初始化外观
 	if err := app.initializeFacade(configPath); err != nil {
 		return fmt.Errorf("初始化外观失败: %w", err)
 	}
-	
+
 	// 5. 设置信号处理
 	app.setupSignalHandling()
-	
+
 	app.logger.Info("应用程序初始化完成")
-	
+
 	return nil
 }
 
 // initializeDI 初始化依赖注入
 func (app *Application) initializeDI(configPath string, generatorType factory.GeneratorType) error {
 	builder := di.NewServiceBuilder()
-	
+
 	// 注册配置服务
 	builder.AddSingleton((*config.Config)(nil), func(container *di.Container) (interface{}, error) {
 		cfg, err := config.Load(configPath)
@@ -78,39 +79,39 @@ func (app *Application) initializeDI(configPath string, generatorType factory.Ge
 		}
 		return cfg, nil
 	})
-	
+
 	// 注册解析器服务
 	builder.AddTransient((*parser.Parser)(nil), func(container *di.Container) (interface{}, error) {
 		return parser.New(), nil
 	})
-	
+
 	// 注册生成器服务
 	builder.AddSingleton((*generator.Generator)(nil), func(container *di.Container) (interface{}, error) {
 		cfg, err := container.Resolve((*config.Config)(nil))
 		if err != nil {
 			return nil, err
 		}
-		
+
 		// 使用抽象工厂创建生成器
 		factoryRegistry := factory.NewGeneratorFactoryRegistry()
 		suite, err := factoryRegistry.CreateGeneratorSuite(generatorType, cfg.(*config.Config))
 		if err != nil {
 			return nil, err
 		}
-		
+
 		return suite.Generator, nil
 	})
-	
+
 	// 注册错误管理器
 	builder.AddSingleton((*chain.ErrorManager)(nil), func(container *di.Container) (interface{}, error) {
 		return chain.NewErrorManager(), nil
 	})
-	
+
 	app.container = builder.Build()
-	
+
 	// 设置服务定位器
 	di.GetServiceLocator().SetContainer(app.container)
-	
+
 	return nil
 }
 
@@ -120,9 +121,9 @@ func (app *Application) initializeErrorHandling() {
 	if err != nil {
 		log.Fatal("无法解析错误管理器:", err)
 	}
-	
+
 	app.errorManager = errorManager.(*chain.ErrorManager)
-	
+
 	// 设置关闭回调
 	app.errorManager.SetShutdownCallback(func() {
 		app.logger.Error("检测到关键错误，系统即将关闭")
@@ -138,26 +139,26 @@ func (app *Application) initializeMediator() error {
 	if err != nil {
 		return err
 	}
-	
+
 	generatorService, err := app.container.Resolve((*generator.Generator)(nil))
 	if err != nil {
 		return err
 	}
-	
+
 	configService, err := app.container.Resolve((*config.Config)(nil))
 	if err != nil {
 		return err
 	}
-	
+
 	// 创建中介者
 	app.mediator = mediator.NewCreeperMediator()
-	
+
 	// 注册组件
 	app.mediator.Register(mediator.NewParserComponent(parserService.(*parser.Parser)))
 	app.mediator.Register(mediator.NewGeneratorComponent(generatorService.(*generator.Generator)))
 	app.mediator.Register(mediator.NewConfigComponent(configService.(*config.Config)))
 	app.mediator.Register(mediator.NewLoggerComponent())
-	
+
 	return nil
 }
 
@@ -167,14 +168,14 @@ func (app *Application) initializeFacade(configPath string) error {
 	if err != nil {
 		return err
 	}
-	
+
 	app.facade = facade
-	
+
 	// 验证设置
 	if err := app.facade.ValidateSetup(); err != nil {
 		return app.errorManager.HandleError(err, chain.SeverityError, "application", "validate_setup", nil)
 	}
-	
+
 	return nil
 }
 
@@ -182,7 +183,7 @@ func (app *Application) initializeFacade(configPath string) error {
 func (app *Application) setupSignalHandling() {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
-	
+
 	go func() {
 		sig := <-sigChan
 		app.logger.Info("接收到信号:", sig)
@@ -194,35 +195,35 @@ func (app *Application) setupSignalHandling() {
 // Generate 生成网站
 func (app *Application) Generate() error {
 	app.logger.Info("开始生成网站")
-	
+
 	if err := app.facade.GenerateWebsite(); err != nil {
 		return app.errorManager.HandleError(err, chain.SeverityError, "application", "generate", nil)
 	}
-	
+
 	return nil
 }
 
 // Serve 启动服务器
 func (app *Application) Serve(port int) error {
 	app.logger.Info("启动服务器，端口:", port)
-	
+
 	if err := app.facade.ServeWebsite(port); err != nil {
 		return app.errorManager.HandleError(err, chain.SeverityCritical, "application", "serve", map[string]interface{}{
 			"port": port,
 		})
 	}
-	
+
 	return nil
 }
 
 // Deploy 部署网站
 func (app *Application) Deploy() error {
 	app.logger.Info("开始部署网站")
-	
+
 	if err := app.facade.DeployWebsite(); err != nil {
 		return app.errorManager.HandleError(err, chain.SeverityError, "application", "deploy", nil)
 	}
-	
+
 	return nil
 }
 
@@ -234,28 +235,28 @@ func (app *Application) GetDeploymentURL() string {
 // GetStatus 获取应用状态
 func (app *Application) GetStatus() map[string]interface{} {
 	status := app.facade.GetSystemStatus()
-	
+
 	// 添加错误统计
 	status["errors"] = app.errorManager.GetErrorStatistics()
-	
+
 	// 添加服务信息
 	status["services"] = app.container.GetRegisteredServices()
-	
+
 	return status
 }
 
 // Shutdown 关闭应用程序
 func (app *Application) Shutdown() {
 	app.logger.Info("开始关闭应用程序")
-	
+
 	if app.facade != nil {
 		app.facade.Shutdown()
 	}
-	
+
 	if app.errorManager != nil {
 		app.errorManager.ClearErrorLog()
 	}
-	
+
 	app.logger.Info("应用程序关闭完成")
 }
 
@@ -270,12 +271,19 @@ func main() {
 		verbose       = flag.Bool("verbose", false, "详细输出")
 		status        = flag.Bool("status", false, "显示系统状态")
 		deploy        = flag.Bool("deploy", false, "生成后自动部署")
+		test          = flag.Bool("test", false, "测试TXT解析功能")
 	)
 	flag.Parse()
-	
+
+	// 如果只是测试TXT解析功能
+	if *test {
+		testTxtParser()
+		return
+	}
+
 	// 创建应用程序
 	app := NewApplication()
-	
+
 	// 解析生成器类型
 	var genType factory.GeneratorType
 	switch *generatorType {
@@ -288,12 +296,12 @@ func main() {
 	default:
 		genType = factory.EnhancedGenerator
 	}
-	
+
 	// 初始化应用程序
 	if err := app.Initialize(*configPath, genType); err != nil {
 		log.Fatalf("应用程序初始化失败: %v", err)
 	}
-	
+
 	// 如果只是查看状态
 	if *status {
 		status := app.GetStatus()
@@ -304,55 +312,105 @@ func main() {
 		}
 		return
 	}
-	
+
 	// 更新配置（如果通过命令行指定）
 	if *inputDir != "novels" || *outputDir != "dist" {
 		updates := map[string]interface{}{
 			"input_dir":  *inputDir,
 			"output_dir": *outputDir,
 		}
-		
+
 		if err := app.facade.UpdateConfig(updates); err != nil {
 			log.Fatalf("更新配置失败: %v", err)
 		}
 	}
-	
+
 	// 生成网站
 	if err := app.Generate(); err != nil {
 		log.Fatalf("生成网站失败: %v", err)
 	}
-	
+
 	fmt.Printf("✅ 静态站点生成完成！\n")
 	fmt.Printf("📁 输出目录: %s\n", *outputDir)
 	fmt.Printf("🎨 生成器类型: %s\n", genType)
-	
+
 	if *verbose {
 		status := app.GetStatus()
 		fmt.Printf("📊 系统状态: %v\n", status)
 	}
-	
+
 	// 部署网站
 	if *deploy {
 		fmt.Printf("🚀 开始部署网站...\n")
-		
+
 		if err := app.Deploy(); err != nil {
 			log.Fatalf("网站部署失败: %v", err)
 		}
-		
+
 		deploymentURL := app.GetDeploymentURL()
 		if deploymentURL != "" {
 			fmt.Printf("✅ 网站部署完成！\n")
 			fmt.Printf("🌐 访问地址: %s\n", deploymentURL)
 		}
 	}
-	
+
 	// 启动服务器
 	if *serve {
 		fmt.Printf("🚀 启动本地服务器 http://localhost:%d\n", *port)
 		fmt.Printf("按 Ctrl+C 停止服务器\n")
-		
+
 		if err := app.Serve(*port); err != nil {
 			log.Fatalf("服务器启动失败: %v", err)
 		}
 	}
+}
+
+// testTxtParser 测试TXT文件解析功能
+func testTxtParser() {
+	fmt.Println("🧪 测试 TXT 文件分类和关键字解析功能")
+
+	// 创建解析器
+	p := parser.New()
+
+	// 测试文件列表
+	testFiles := []string{
+		"novels/TXT示例小说.txt",
+		"novels/TXT科幻小说.txt",
+		"novels/TXT多文件示例",
+	}
+
+	for _, file := range testFiles {
+		fmt.Printf("\n📖 解析文件: %s\n", file)
+		fmt.Println(strings.Repeat("=", 50))
+
+		novel, err := p.ParseNovel(file)
+		if err != nil {
+			fmt.Printf("❌ 解析失败: %v\n", err)
+			continue
+		}
+
+		// 显示解析结果
+		fmt.Printf("📚 标题: %s\n", novel.Title)
+		fmt.Printf("👤 作者: %s\n", novel.Author)
+		fmt.Printf("📂 分类: %s\n", novel.Category)
+		fmt.Printf("🏷️  标签: %v\n", novel.Tags)
+		fmt.Printf("📝 简介: %s\n", novel.Description)
+		fmt.Printf("📊 章节数: %d\n", len(novel.Chapters))
+
+		// 显示前几个章节
+		if len(novel.Chapters) > 0 {
+			fmt.Println("\n📖 章节列表:")
+			for i, chapter := range novel.Chapters {
+				if i >= 3 { // 只显示前3章
+					break
+				}
+				fmt.Printf("  %d. %s (%d字)\n", chapter.ID, chapter.Title, chapter.WordCount)
+			}
+			if len(novel.Chapters) > 3 {
+				fmt.Printf("  ... 还有 %d 章\n", len(novel.Chapters)-3)
+			}
+		}
+	}
+
+	fmt.Println("\n✅ 测试完成！")
 }

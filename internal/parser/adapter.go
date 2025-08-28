@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -30,27 +31,27 @@ func (ma *MarkdownAdapter) GetContentType() string {
 func (ma *MarkdownAdapter) PreprocessContent(content string) string {
 	// Markdown 预处理
 	content = strings.TrimSpace(content)
-	
+
 	// 确保段落之间有适当的空行
 	lines := strings.Split(content, "\n")
 	var processedLines []string
-	
+
 	for i, line := range lines {
 		processedLines = append(processedLines, line)
-		
+
 		// 在非空行后面如果跟着非空行，且不是列表或标题，添加空行
-		if i < len(lines)-1 && strings.TrimSpace(line) != "" && 
-		   strings.TrimSpace(lines[i+1]) != "" &&
-		   !strings.HasPrefix(strings.TrimSpace(lines[i+1]), "#") &&
-		   !strings.HasPrefix(strings.TrimSpace(lines[i+1]), "-") &&
-		   !strings.HasPrefix(strings.TrimSpace(lines[i+1]), "*") {
+		if i < len(lines)-1 && strings.TrimSpace(line) != "" &&
+			strings.TrimSpace(lines[i+1]) != "" &&
+			!strings.HasPrefix(strings.TrimSpace(lines[i+1]), "#") &&
+			!strings.HasPrefix(strings.TrimSpace(lines[i+1]), "-") &&
+			!strings.HasPrefix(strings.TrimSpace(lines[i+1]), "*") {
 			// 检查是否已经有空行
 			if i < len(lines)-2 && strings.TrimSpace(lines[i+1]) != "" {
 				processedLines = append(processedLines, "")
 			}
 		}
 	}
-	
+
 	return strings.Join(processedLines, "\n")
 }
 
@@ -81,19 +82,19 @@ func (ta *TxtAdapter) GetContentType() string {
 func (ta *TxtAdapter) PreprocessContent(content string) string {
 	// TXT 预处理
 	content = strings.TrimSpace(content)
-	
+
 	// 将 TXT 内容转换为类似 Markdown 的格式
 	lines := strings.Split(content, "\n")
 	var processedLines []string
-	
+
 	for _, line := range lines {
 		trimmed := strings.TrimSpace(line)
-		
+
 		if trimmed == "" {
 			processedLines = append(processedLines, "")
 			continue
 		}
-		
+
 		// 处理特殊格式
 		if ta.isDialogue(trimmed) {
 			// 对话处理
@@ -105,16 +106,16 @@ func (ta *TxtAdapter) PreprocessContent(content string) string {
 			processedLines = append(processedLines, trimmed)
 		}
 	}
-	
+
 	return strings.Join(processedLines, "\n\n")
 }
 
 func (ta *TxtAdapter) ConvertToHTML(content string) string {
 	preprocessed := ta.PreprocessContent(content)
-	
+
 	// 将预处理后的内容转换为 Markdown，然后转换为 HTML
 	html := string(blackfriday.Run([]byte(preprocessed)))
-	
+
 	return ta.PostprocessContent(html)
 }
 
@@ -122,10 +123,10 @@ func (ta *TxtAdapter) PostprocessContent(content string) string {
 	// TXT 后处理
 	// 添加段落缩进样式
 	content = strings.ReplaceAll(content, "<p>", `<p class="txt-paragraph">`)
-	
+
 	// 处理对话样式
 	content = strings.ReplaceAll(content, "<blockquote>", `<blockquote class="dialogue">`)
-	
+
 	return content
 }
 
@@ -138,7 +139,7 @@ func (ta *TxtAdapter) isDialogue(line string) bool {
 func (ta *TxtAdapter) isEmphasis(line string) bool {
 	// 判断是否为心理描写或重要内容
 	return strings.Contains(line, "心想") || strings.Contains(line, "暗道") ||
-		   strings.Contains(line, "！！") || strings.Contains(line, "？？")
+		strings.Contains(line, "！！") || strings.Contains(line, "？？")
 }
 
 // ContentAdapterFactory 内容适配器工厂
@@ -151,13 +152,13 @@ func NewContentAdapterFactory() *ContentAdapterFactory {
 	factory := &ContentAdapterFactory{
 		adapters: make(map[string]ContentAdapter),
 	}
-	
+
 	// 注册默认适配器
 	factory.RegisterAdapter("md", NewMarkdownAdapter())
 	factory.RegisterAdapter("markdown", NewMarkdownAdapter())
 	factory.RegisterAdapter("txt", NewTxtAdapter())
 	factory.RegisterAdapter("text", NewTxtAdapter())
-	
+
 	return factory
 }
 
@@ -210,33 +211,33 @@ func (ca *ChapterAdapter) ConvertChapter(chapter *Chapter, sourceType string) er
 		Message:     fmt.Sprintf("开始转换章节: %s", chapter.Title),
 		ChapterInfo: chapter,
 	})
-	
+
 	// 获取适配器
 	adapter := ca.contentFactory.GetAdapter(sourceType)
-	
+
 	// 转换内容
 	chapter.HTMLContent = adapter.ConvertToHTML(chapter.Content)
 	chapter.WordCount = len([]rune(chapter.Content))
 	chapter.CreatedAt = time.Now()
-	
+
 	ca.notifier.NotifyObservers(&ParseEventData{
 		Event:       ParseEventComplete,
 		Message:     fmt.Sprintf("章节转换完成: %s", chapter.Title),
 		ChapterInfo: chapter,
 	})
-	
+
 	return nil
 }
 
 // ConvertNovel 转换整部小说
 func (ca *ChapterAdapter) ConvertNovel(novel *Novel, sourceType string) error {
 	totalChapters := len(novel.Chapters)
-	
+
 	ca.notifier.NotifyObservers(&ParseEventData{
 		Event:   ParseEventStart,
 		Message: fmt.Sprintf("开始转换小说: %s (%d章)", novel.Title, totalChapters),
 	})
-	
+
 	for i, chapter := range novel.Chapters {
 		if err := ca.ConvertChapter(chapter, sourceType); err != nil {
 			ca.notifier.NotifyObservers(&ParseEventData{
@@ -246,7 +247,7 @@ func (ca *ChapterAdapter) ConvertNovel(novel *Novel, sourceType string) error {
 			})
 			return err
 		}
-		
+
 		// 更新进度
 		progress := float64(i+1) / float64(totalChapters) * 100
 		ca.notifier.NotifyObservers(&ParseEventData{
@@ -255,11 +256,11 @@ func (ca *ChapterAdapter) ConvertNovel(novel *Novel, sourceType string) error {
 			Progress: progress,
 		})
 	}
-	
+
 	ca.notifier.NotifyObservers(&ParseEventData{
 		Event:   ParseEventComplete,
 		Message: fmt.Sprintf("小说转换完成: %s", novel.Title),
 	})
-	
+
 	return nil
 }

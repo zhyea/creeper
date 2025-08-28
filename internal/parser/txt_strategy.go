@@ -14,11 +14,11 @@ import (
 
 // TxtFileStrategy TXT 文件解析策略
 type TxtFileStrategy struct {
-	parser          *Parser
-	txtFormat       *TxtFormat
-	enhancedParser  *EnhancedParser
-	chapterAdapter  *ChapterAdapter
-	statefulParser  *StatefulTxtParser
+	parser         *Parser
+	txtFormat      *TxtFormat
+	enhancedParser *EnhancedParser
+	chapterAdapter *ChapterAdapter
+	statefulParser *StatefulTxtParser
 }
 
 // NewTxtFileStrategy 创建 TXT 文件策略
@@ -29,18 +29,18 @@ func NewTxtFileStrategy(parser *Parser) *TxtFileStrategy {
 		chapterAdapter: NewChapterAdapter(),
 		statefulParser: NewStatefulTxtParser(),
 	}
-	
+
 	// 创建增强解析器
 	consoleObserver := NewConsoleObserver(false) // 设置为 false 减少输出
 	strategy.enhancedParser = NewEnhancedParser().
 		WithLogging(consoleObserver).
 		WithCaching().
 		WithValidation()
-	
+
 	// 订阅解析事件
 	strategy.chapterAdapter.Subscribe(consoleObserver)
 	strategy.statefulParser.Subscribe(consoleObserver)
-	
+
 	return strategy
 }
 
@@ -65,7 +65,7 @@ func (s *TxtFileStrategy) Parse(novel *Novel, path string) error {
 	if err != nil {
 		return fmt.Errorf("读取文件失败: %v", err)
 	}
-	
+
 	lines := strings.Split(string(content), "\n")
 
 	// 使用状态化解析器
@@ -86,18 +86,18 @@ func (s *TxtFileStrategy) parseContentOld(novel *Novel, lines []string) error {
 	var txtChapters []*TxtChapter
 	var currentChapter *TxtChapter
 	var contentLines []string
-	
+
 	currentVolumeID := 0
 	currentChapterID := 0
 	currentSectionID := 0
-	
+
 	inMetadata := true // 文件开头可能有元数据
 	metadataEndLine := 0
-	
+
 	// 第一遍：识别结构和元数据
 	for i, line := range lines {
 		line = strings.TrimSpace(line)
-		
+
 		// 跳过空行
 		if s.txtFormat.IsEmptyLine(line) {
 			if inMetadata && len(contentLines) == 0 {
@@ -106,7 +106,7 @@ func (s *TxtFileStrategy) parseContentOld(novel *Novel, lines []string) error {
 			contentLines = append(contentLines, "")
 			continue
 		}
-		
+
 		// 检查分隔符
 		if s.txtFormat.IsSeparator(line) {
 			if inMetadata {
@@ -115,7 +115,7 @@ func (s *TxtFileStrategy) parseContentOld(novel *Novel, lines []string) error {
 			}
 			continue
 		}
-		
+
 		// 在元数据阶段，尝试提取元数据
 		if inMetadata && i < 50 { // 只在前50行查找元数据
 			if key, value := s.txtFormat.ExtractMetadata(line); key != "" {
@@ -123,10 +123,10 @@ func (s *TxtFileStrategy) parseContentOld(novel *Novel, lines []string) error {
 				continue
 			}
 		}
-		
+
 		// 识别章节类型
 		chapterType, title := s.txtFormat.IdentifyChapterType(line)
-		
+
 		if chapterType != ChapterTypeUnknown {
 			// 保存上一章节
 			if currentChapter != nil {
@@ -134,7 +134,7 @@ func (s *TxtFileStrategy) parseContentOld(novel *Novel, lines []string) error {
 				currentChapter.LineEnd = i - 1
 				txtChapters = append(txtChapters, currentChapter)
 			}
-			
+
 			// 更新层级计数
 			switch chapterType {
 			case ChapterTypeVolume:
@@ -147,7 +147,7 @@ func (s *TxtFileStrategy) parseContentOld(novel *Novel, lines []string) error {
 			case ChapterTypeSection:
 				currentSectionID++
 			}
-			
+
 			// 创建新章节
 			currentChapter = &TxtChapter{
 				Type:      chapterType,
@@ -158,7 +158,7 @@ func (s *TxtFileStrategy) parseContentOld(novel *Novel, lines []string) error {
 				Title:     title,
 				LineStart: i,
 			}
-			
+
 			contentLines = make([]string, 0)
 			inMetadata = false
 		} else {
@@ -168,14 +168,14 @@ func (s *TxtFileStrategy) parseContentOld(novel *Novel, lines []string) error {
 			}
 		}
 	}
-	
+
 	// 保存最后一章节
 	if currentChapter != nil {
 		currentChapter.Content = s.txtFormat.CleanContent(strings.Join(contentLines, "\n"))
 		currentChapter.LineEnd = len(lines) - 1
 		txtChapters = append(txtChapters, currentChapter)
 	}
-	
+
 	// 如果没有找到任何章节，将整个文件作为一章
 	if len(txtChapters) == 0 {
 		allContent := strings.Join(lines[metadataEndLine:], "\n")
@@ -191,7 +191,7 @@ func (s *TxtFileStrategy) parseContentOld(novel *Novel, lines []string) error {
 			LineEnd:   len(lines) - 1,
 		})
 	}
-	
+
 	// 转换为标准章节格式
 	return s.convertToStandardChapters(novel, txtChapters)
 }
@@ -205,6 +205,17 @@ func (s *TxtFileStrategy) setNovelMetadata(novel *Novel, key, value string) {
 		novel.Author = value
 	case "description":
 		novel.Description = value
+	case "category":
+		novel.Category = value
+	case "tags":
+		// 处理标签，支持逗号、分号、空格分隔
+		tags := strings.FieldsFunc(value, func(r rune) bool {
+			return r == ',' || r == ';' || r == '，' || r == '；'
+		})
+		for i, tag := range tags {
+			tags[i] = strings.TrimSpace(tag)
+		}
+		novel.Tags = tags
 	}
 }
 
@@ -225,18 +236,18 @@ func (s *TxtFileStrategy) getChapterLevel(chapterType ChapterType) int {
 // convertToStandardChapters 转换为标准章节格式
 func (s *TxtFileStrategy) convertToStandardChapters(novel *Novel, txtChapters []*TxtChapter) error {
 	chapterID := 0
-	
+
 	for _, txtChapter := range txtChapters {
 		// 跳过空内容的章节
 		if strings.TrimSpace(txtChapter.Content) == "" {
 			continue
 		}
-		
+
 		chapterID++
-		
+
 		// 生成章节标题
 		title := s.generateChapterTitle(txtChapter)
-		
+
 		// 创建标准章节
 		chapter := &Chapter{
 			ID:          chapterID,
@@ -247,10 +258,10 @@ func (s *TxtFileStrategy) convertToStandardChapters(novel *Novel, txtChapters []
 			CreatedAt:   time.Now(),
 			Path:        fmt.Sprintf("chapter-%d", chapterID),
 		}
-		
+
 		novel.Chapters = append(novel.Chapters, chapter)
 	}
-	
+
 	return nil
 }
 
@@ -262,7 +273,7 @@ func (s *TxtFileStrategy) generateChapterTitle(txtChapter *TxtChapter) string {
 			return fmt.Sprintf("第%d卷 %s", txtChapter.VolumeID, txtChapter.Title)
 		}
 		return fmt.Sprintf("第%d卷", txtChapter.VolumeID)
-		
+
 	case ChapterTypeChapter:
 		if txtChapter.VolumeID > 0 && txtChapter.Title != "" {
 			return fmt.Sprintf("第%d章 %s", txtChapter.ChapterID, txtChapter.Title)
@@ -270,22 +281,22 @@ func (s *TxtFileStrategy) generateChapterTitle(txtChapter *TxtChapter) string {
 			return fmt.Sprintf("第%d章 %s", txtChapter.ChapterID, txtChapter.Title)
 		}
 		return fmt.Sprintf("第%d章", txtChapter.ChapterID)
-		
+
 	case ChapterTypeSection:
 		if txtChapter.Title != "" {
 			return fmt.Sprintf("第%d节 %s", txtChapter.SectionID, txtChapter.Title)
 		}
 		return fmt.Sprintf("第%d节", txtChapter.SectionID)
-		
+
 	case ChapterTypePrologue:
 		return txtChapter.Title
-		
+
 	case ChapterTypeEpilogue:
 		return txtChapter.Title
-		
+
 	case ChapterTypeSummary:
 		return txtChapter.Title
-		
+
 	default:
 		if txtChapter.Title != "" {
 			return txtChapter.Title
@@ -313,17 +324,17 @@ func (s *TxtDirectoryStrategy) CanHandle(path string) bool {
 	if err != nil {
 		return false
 	}
-	
+
 	if !info.IsDir() {
 		return false
 	}
-	
+
 	// 检查是否包含 .txt 文件
 	entries, err := os.ReadDir(path)
 	if err != nil {
 		return false
 	}
-	
+
 	hasTxt := false
 	for _, entry := range entries {
 		if !entry.IsDir() && strings.HasSuffix(strings.ToLower(entry.Name()), ".txt") {
@@ -331,7 +342,7 @@ func (s *TxtDirectoryStrategy) CanHandle(path string) bool {
 			break
 		}
 	}
-	
+
 	return hasTxt
 }
 
@@ -351,18 +362,18 @@ func (s *TxtDirectoryStrategy) Parse(novel *Novel, path string) error {
 			break
 		}
 	}
-	
+
 	// 如果没有找到元数据，使用目录名作为标题
 	if novel.Title == "" {
 		novel.Title = filepath.Base(path)
 	}
-	
+
 	// 读取所有 TXT 文件
 	entries, err := os.ReadDir(path)
 	if err != nil {
 		return fmt.Errorf("读取目录失败: %v", err)
 	}
-	
+
 	var txtFiles []string
 	for _, entry := range entries {
 		if !entry.IsDir() && strings.HasSuffix(strings.ToLower(entry.Name()), ".txt") {
@@ -379,10 +390,10 @@ func (s *TxtDirectoryStrategy) Parse(novel *Novel, path string) error {
 			}
 		}
 	}
-	
+
 	// 按文件名排序
 	s.sortTxtFiles(txtFiles)
-	
+
 	// 解析每个文件
 	chapterID := 0
 	for _, txtFile := range txtFiles {
@@ -393,7 +404,7 @@ func (s *TxtDirectoryStrategy) Parse(novel *Novel, path string) error {
 		}
 		novel.Chapters = append(novel.Chapters, chapters...)
 	}
-	
+
 	return nil
 }
 
@@ -404,14 +415,14 @@ func (s *TxtDirectoryStrategy) parseMetadataFile(novel *Novel, metaPath string) 
 		return err
 	}
 	defer file.Close()
-	
+
 	scanner := bufio.NewScanner(file)
 	var descriptionLines []string
 	inDescription := false
-	
+
 	for scanner.Scan() {
 		line := scanner.Text()
-		
+
 		if key, value := s.txtFormat.ExtractMetadata(line); key != "" {
 			switch key {
 			case "title":
@@ -424,17 +435,28 @@ func (s *TxtDirectoryStrategy) parseMetadataFile(novel *Novel, metaPath string) 
 				} else {
 					inDescription = true
 				}
+			case "category":
+				novel.Category = value
+			case "tags":
+				// 处理标签，支持逗号、分号、空格分隔
+				tags := strings.FieldsFunc(value, func(r rune) bool {
+					return r == ',' || r == ';' || r == '，' || r == '；'
+				})
+				for i, tag := range tags {
+					tags[i] = strings.TrimSpace(tag)
+				}
+				novel.Tags = tags
 			}
 		} else if inDescription && strings.TrimSpace(line) != "" {
 			descriptionLines = append(descriptionLines, strings.TrimSpace(line))
 		}
 	}
-	
+
 	// 如果简介是多行的
 	if len(descriptionLines) > 0 && novel.Description == "" {
 		novel.Description = strings.Join(descriptionLines, "\n")
 	}
-	
+
 	return scanner.Err()
 }
 
@@ -454,15 +476,15 @@ func (s *TxtDirectoryStrategy) sortTxtFiles(files []string) {
 func (s *TxtDirectoryStrategy) compareFilenames(a, b string) int {
 	nameA := filepath.Base(a)
 	nameB := filepath.Base(b)
-	
+
 	// 提取数字
 	numA := s.extractNumberFromFilename(nameA)
 	numB := s.extractNumberFromFilename(nameB)
-	
+
 	if numA != numB {
 		return numA - numB
 	}
-	
+
 	// 如果数字相同，按字符串排序
 	if nameA < nameB {
 		return -1
@@ -476,7 +498,7 @@ func (s *TxtDirectoryStrategy) compareFilenames(a, b string) int {
 func (s *TxtDirectoryStrategy) extractNumberFromFilename(filename string) int {
 	// 移除扩展名
 	name := strings.TrimSuffix(filename, ".txt")
-	
+
 	// 尝试提取开头的数字
 	for i, char := range name {
 		if char >= '0' && char <= '9' {
@@ -490,7 +512,7 @@ func (s *TxtDirectoryStrategy) extractNumberFromFilename(filename string) int {
 			}
 		}
 	}
-	
+
 	return 0
 }
 
@@ -500,22 +522,22 @@ func (s *TxtDirectoryStrategy) parseTextFile(filePath string, chapterID *int) ([
 	if err != nil {
 		return nil, err
 	}
-	
+
 	lines := strings.Split(string(content), "\n")
-	
+
 	// 使用 TXT 文件策略解析
 	txtStrategy := NewTxtFileStrategy(s.parser)
-	
+
 	// 创建临时小说对象
 	tempNovel := &Novel{
 		Path:     filePath,
 		Chapters: make([]*Chapter, 0),
 	}
-	
-	if err := txtStrategy.parseContent(tempNovel, lines); err != nil {
+
+	if err := txtStrategy.parseContentOld(tempNovel, lines); err != nil {
 		return nil, err
 	}
-	
+
 	// 重新分配章节ID
 	var chapters []*Chapter
 	for _, chapter := range tempNovel.Chapters {
@@ -523,6 +545,6 @@ func (s *TxtDirectoryStrategy) parseTextFile(filePath string, chapterID *int) ([
 		chapter.ID = *chapterID
 		chapters = append(chapters, chapter)
 	}
-	
+
 	return chapters, nil
 }

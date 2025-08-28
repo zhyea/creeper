@@ -45,36 +45,36 @@ func (l *Logger) Debug(v ...interface{}) {
 	l.logger.Println("[DEBUG]", v)
 }
 
-// ResourceManager 资源管理器
-type ResourceManager struct {
+// GlobalResourceManager 全局资源管理器
+type GlobalResourceManager struct {
 	resources map[string]interface{}
 	mutex     sync.RWMutex
 }
 
 var (
-	resourceInstance *ResourceManager
-	resourceOnce     sync.Once
+	globalResourceInstance *GlobalResourceManager
+	globalResourceOnce     sync.Once
 )
 
-// GetResourceManager 获取资源管理器单例
-func GetResourceManager() *ResourceManager {
-	resourceOnce.Do(func() {
-		resourceInstance = &ResourceManager{
+// GetGlobalResourceManager 获取全局资源管理器单例
+func GetGlobalResourceManager() *GlobalResourceManager {
+	globalResourceOnce.Do(func() {
+		globalResourceInstance = &GlobalResourceManager{
 			resources: make(map[string]interface{}),
 		}
 	})
-	return resourceInstance
+	return globalResourceInstance
 }
 
 // Set 设置资源
-func (rm *ResourceManager) Set(key string, value interface{}) {
+func (rm *GlobalResourceManager) Set(key string, value interface{}) {
 	rm.mutex.Lock()
 	defer rm.mutex.Unlock()
 	rm.resources[key] = value
 }
 
 // Get 获取资源
-func (rm *ResourceManager) Get(key string) (interface{}, bool) {
+func (rm *GlobalResourceManager) Get(key string) (interface{}, bool) {
 	rm.mutex.RLock()
 	defer rm.mutex.RUnlock()
 	value, exists := rm.resources[key]
@@ -82,7 +82,7 @@ func (rm *ResourceManager) Get(key string) (interface{}, bool) {
 }
 
 // GetString 获取字符串资源
-func (rm *ResourceManager) GetString(key string) (string, bool) {
+func (rm *GlobalResourceManager) GetString(key string) (string, bool) {
 	value, exists := rm.Get(key)
 	if !exists {
 		return "", false
@@ -94,7 +94,7 @@ func (rm *ResourceManager) GetString(key string) (string, bool) {
 }
 
 // GetInt 获取整数资源
-func (rm *ResourceManager) GetInt(key string) (int, bool) {
+func (rm *GlobalResourceManager) GetInt(key string) (int, bool) {
 	value, exists := rm.Get(key)
 	if !exists {
 		return 0, false
@@ -106,21 +106,21 @@ func (rm *ResourceManager) GetInt(key string) (int, bool) {
 }
 
 // Delete 删除资源
-func (rm *ResourceManager) Delete(key string) {
+func (rm *GlobalResourceManager) Delete(key string) {
 	rm.mutex.Lock()
 	defer rm.mutex.Unlock()
 	delete(rm.resources, key)
 }
 
 // Clear 清空所有资源
-func (rm *ResourceManager) Clear() {
+func (rm *GlobalResourceManager) Clear() {
 	rm.mutex.Lock()
 	defer rm.mutex.Unlock()
 	rm.resources = make(map[string]interface{})
 }
 
 // Keys 获取所有键
-func (rm *ResourceManager) Keys() []string {
+func (rm *GlobalResourceManager) Keys() []string {
 	rm.mutex.RLock()
 	defer rm.mutex.RUnlock()
 	keys := make([]string, 0, len(rm.resources))
@@ -131,7 +131,7 @@ func (rm *ResourceManager) Keys() []string {
 }
 
 // Count 获取资源数量
-func (rm *ResourceManager) Count() int {
+func (rm *GlobalResourceManager) Count() int {
 	rm.mutex.RLock()
 	defer rm.mutex.RUnlock()
 	return len(rm.resources)

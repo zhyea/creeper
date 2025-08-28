@@ -37,7 +37,8 @@ func (s *SingleFileStrategy) GetName() string {
 }
 
 func (s *SingleFileStrategy) Parse(novel *Novel, path string) error {
-	return s.parser.parseNovelFromFile(novel)
+	_, err := s.parser.parseNovelFromFile(novel)
+	return err
 }
 
 // MultiFileStrategy 多文件解析策略
@@ -55,20 +56,20 @@ func (s *MultiFileStrategy) CanHandle(path string) bool {
 	if err != nil {
 		return false
 	}
-	
+
 	if !info.IsDir() {
 		return false
 	}
-	
+
 	// 检查是否包含 .md 文件但不包含子目录结构
 	entries, err := os.ReadDir(path)
 	if err != nil {
 		return false
 	}
-	
+
 	hasMarkdown := false
 	hasSubDirs := false
-	
+
 	for _, entry := range entries {
 		if entry.IsDir() && !strings.HasPrefix(entry.Name(), ".") {
 			hasSubDirs = true
@@ -77,7 +78,7 @@ func (s *MultiFileStrategy) CanHandle(path string) bool {
 			hasMarkdown = true
 		}
 	}
-	
+
 	return hasMarkdown && !hasSubDirs
 }
 
@@ -86,7 +87,8 @@ func (s *MultiFileStrategy) GetName() string {
 }
 
 func (s *MultiFileStrategy) Parse(novel *Novel, path string) error {
-	return s.parser.parseNovelFromDir(novel)
+	_, err := s.parser.parseNovelFromDir(novel)
+	return err
 }
 
 // MultiVolumeStrategy 多卷解析策略
@@ -104,28 +106,28 @@ func (s *MultiVolumeStrategy) CanHandle(path string) bool {
 	if err != nil {
 		return false
 	}
-	
+
 	if !info.IsDir() {
 		return false
 	}
-	
+
 	// 检查是否包含卷目录
 	entries, err := os.ReadDir(path)
 	if err != nil {
 		return false
 	}
-	
+
 	volumeDirs := 0
 	for _, entry := range entries {
 		if entry.IsDir() && !strings.HasPrefix(entry.Name(), ".") {
 			// 检查目录名是否包含"卷"字符
-			if strings.Contains(entry.Name(), "卷") || 
-			   strings.Contains(strings.ToLower(entry.Name()), "volume") {
+			if strings.Contains(entry.Name(), "卷") ||
+				strings.Contains(strings.ToLower(entry.Name()), "volume") {
 				volumeDirs++
 			}
 		}
 	}
-	
+
 	return volumeDirs > 0
 }
 
@@ -139,7 +141,7 @@ func (s *MultiVolumeStrategy) Parse(novel *Novel, path string) error {
 	if err != nil {
 		return fmt.Errorf("读取目录失败: %v", err)
 	}
-	
+
 	// 首先读取元数据
 	metaFile := filepath.Join(path, "meta.md")
 	if _, err := os.Stat(metaFile); err == nil {
@@ -147,12 +149,12 @@ func (s *MultiVolumeStrategy) Parse(novel *Novel, path string) error {
 			return fmt.Errorf("解析元数据失败: %v", err)
 		}
 	}
-	
+
 	// 如果没有找到元数据，使用目录名作为标题
 	if novel.Title == "" {
 		novel.Title = filepath.Base(path)
 	}
-	
+
 	// 解析各卷
 	volumeDirs := make([]string, 0)
 	for _, entry := range entries {
@@ -160,7 +162,7 @@ func (s *MultiVolumeStrategy) Parse(novel *Novel, path string) error {
 			volumeDirs = append(volumeDirs, entry.Name())
 		}
 	}
-	
+
 	// 按名称排序卷
 	for _, volumeDir := range volumeDirs {
 		volumePath := filepath.Join(path, volumeDir)
@@ -168,12 +170,12 @@ func (s *MultiVolumeStrategy) Parse(novel *Novel, path string) error {
 			return fmt.Errorf("解析卷 %s 失败: %v", volumeDir, err)
 		}
 	}
-	
+
 	// 重新分配章节ID
 	for i, chapter := range novel.Chapters {
 		chapter.ID = i + 1
 	}
-	
+
 	return nil
 }
 
@@ -183,7 +185,7 @@ func (s *MultiVolumeStrategy) parseVolume(novel *Novel, volumePath string) error
 	if err != nil {
 		return fmt.Errorf("读取卷目录失败: %v", err)
 	}
-	
+
 	// 收集章节文件
 	chapterFiles := make([]string, 0)
 	for _, entry := range entries {
@@ -191,7 +193,7 @@ func (s *MultiVolumeStrategy) parseVolume(novel *Novel, volumePath string) error
 			chapterFiles = append(chapterFiles, filepath.Join(volumePath, entry.Name()))
 		}
 	}
-	
+
 	// 解析每个章节
 	for _, chapterFile := range chapterFiles {
 		chapter, err := s.parser.parseChapterFile(chapterFile)
@@ -200,7 +202,7 @@ func (s *MultiVolumeStrategy) parseVolume(novel *Novel, volumePath string) error
 		}
 		novel.Chapters = append(novel.Chapters, chapter)
 	}
-	
+
 	return nil
 }
 

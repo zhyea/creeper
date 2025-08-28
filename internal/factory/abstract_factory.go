@@ -4,18 +4,18 @@ import (
 	"fmt"
 
 	"creeper/internal/config"
-	"creeper/internal/parser"
 	"creeper/internal/generator"
+	"creeper/internal/parser"
 )
 
 // GeneratorType 生成器类型
 type GeneratorType string
 
 const (
-	StaticGenerator    GeneratorType = "static"
-	DynamicGenerator   GeneratorType = "dynamic"
-	MinimalGenerator   GeneratorType = "minimal"
-	EnhancedGenerator  GeneratorType = "enhanced"
+	StaticGenerator   GeneratorType = "static"
+	DynamicGenerator  GeneratorType = "dynamic"
+	MinimalGenerator  GeneratorType = "minimal"
+	EnhancedGenerator GeneratorType = "enhanced"
 )
 
 // AbstractGeneratorFactory 抽象生成器工厂
@@ -72,10 +72,7 @@ type EnhancedGeneratorFactory struct{}
 
 func (egf *EnhancedGeneratorFactory) CreateParser() parser.ParseStrategy {
 	baseParser := parser.New()
-	
-	// 创建策略管理器，支持所有格式
-	strategyManager := parser.NewStrategyManager(baseParser)
-	
+
 	// 返回多格式策略（这里简化为返回 TXT 策略）
 	return parser.NewTxtFileStrategy(baseParser)
 }
@@ -153,15 +150,8 @@ func (mgf *MinimalGeneratorFactory) CreateParser() parser.ParseStrategy {
 }
 
 func (mgf *MinimalGeneratorFactory) CreateGenerator(config *config.Config) *generator.Generator {
-	// 创建最小化配置
-	minimalConfig := config.Builder().
-		WithSiteTitle(config.Site.Title).
-		WithInputDir(config.InputDir).
-		WithOutputDir(config.OutputDir).
-		WithBuild(false, false, false). // 不压缩
-		Build()
-	
-	return generator.New(minimalConfig)
+	// 使用原始配置创建生成器
+	return generator.New(config)
 }
 
 func (mgf *MinimalGeneratorFactory) CreateTemplateFactory() *generator.TemplateFactory {
@@ -209,12 +199,12 @@ func NewGeneratorFactoryRegistry() *GeneratorFactoryRegistry {
 	registry := &GeneratorFactoryRegistry{
 		factories: make(map[GeneratorType]AbstractGeneratorFactory),
 	}
-	
+
 	// 注册默认工厂
 	registry.RegisterFactory(StaticGenerator, &StaticGeneratorFactory{})
 	registry.RegisterFactory(EnhancedGenerator, &EnhancedGeneratorFactory{})
 	registry.RegisterFactory(MinimalGenerator, &MinimalGeneratorFactory{})
-	
+
 	return registry
 }
 
@@ -256,7 +246,7 @@ func (gfr *GeneratorFactoryRegistry) CreateGeneratorSuite(generatorType Generato
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return &GeneratorSuite{
 		Parser:          factory.CreateParser(),
 		Generator:       factory.CreateGenerator(config),

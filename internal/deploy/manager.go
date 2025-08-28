@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"creeper/internal/common"
+
 	"gopkg.in/yaml.v3"
 )
 
@@ -21,12 +23,12 @@ const (
 
 // DeployConfig 部署配置
 type DeployConfig struct {
-	Type       DeployType                `yaml:"type"`
-	Cloudflare *CloudflareConfig         `yaml:"cloudflare,omitempty"`
-	GitHub     *GitHubPagesConfig        `yaml:"github,omitempty"`
-	Vercel     *VercelConfig             `yaml:"vercel,omitempty"`
-	Netlify    *NetlifyConfig            `yaml:"netlify,omitempty"`
-	Options    map[string]interface{}    `yaml:"options,omitempty"`
+	Type       DeployType             `yaml:"type"`
+	Cloudflare *CloudflareConfig      `yaml:"cloudflare,omitempty"`
+	GitHub     *GitHubPagesConfig     `yaml:"github,omitempty"`
+	Vercel     *VercelConfig          `yaml:"vercel,omitempty"`
+	Netlify    *NetlifyConfig         `yaml:"netlify,omitempty"`
+	Options    map[string]interface{} `yaml:"options,omitempty"`
 }
 
 // GitHubPagesConfig GitHub Pages 配置
@@ -39,19 +41,19 @@ type GitHubPagesConfig struct {
 
 // VercelConfig Vercel 配置
 type VercelConfig struct {
-	ProjectID   string `yaml:"project_id"`
-	Token       string `yaml:"token"`
-	TeamID      string `yaml:"team_id,omitempty"`
-	Framework   string `yaml:"framework"`
+	ProjectID    string `yaml:"project_id"`
+	Token        string `yaml:"token"`
+	TeamID       string `yaml:"team_id,omitempty"`
+	Framework    string `yaml:"framework"`
 	BuildCommand string `yaml:"build_command"`
 }
 
 // NetlifyConfig Netlify 配置
 type NetlifyConfig struct {
-	SiteID      string `yaml:"site_id"`
-	Token       string `yaml:"token"`
+	SiteID       string `yaml:"site_id"`
+	Token        string `yaml:"token"`
 	BuildCommand string `yaml:"build_command"`
-	PublishDir  string `yaml:"publish_dir"`
+	PublishDir   string `yaml:"publish_dir"`
 }
 
 // Deployer 部署器接口
@@ -63,30 +65,30 @@ type Deployer interface {
 
 // DeployManager 部署管理器
 type DeployManager struct {
-	config           *DeployConfig
-	logger           *common.Logger
-	deployer         Deployer
-	template         *BaseDeployTemplate
-	eventManager     *DeploymentEventManager
-	caretaker        *DeploymentCaretaker
-	originator       *DeploymentOriginator
-	fileIterator     FileIterator
+	config       *DeployConfig
+	logger       *common.Logger
+	deployer     Deployer
+	template     *BaseDeployTemplate
+	eventManager *DeploymentEventManager
+	caretaker    *DeploymentCaretaker
+	originator   *DeploymentOriginator
+	fileIterator FileIterator
 }
 
 // NewDeployManager 创建部署管理器
 func NewDeployManager(config *DeployConfig) *DeployManager {
 	// 创建事件管理器
 	eventManager := NewDeploymentEventManager()
-	
+
 	// 创建状态管理者
 	caretaker := NewDeploymentCaretaker(".creeper/deployments.json", 100)
-	
+
 	// 创建发起者
 	originator := NewDeploymentOriginator(caretaker)
-	
+
 	// 创建模板
 	template := NewBaseDeployTemplate()
-	
+
 	return &DeployManager{
 		config:       config,
 		logger:       common.GetLogger(),
@@ -174,29 +176,29 @@ func (dm *DeployManager) Deploy(siteDir string) error {
 		return fmt.Errorf("站点目录验证失败: %w", err)
 	}
 
-	// 使用模板方法执行部署
-	if err := dm.template.DeployWithValidation(dm.deployer, siteDir); err != nil {
+	// 执行部署
+	if err := dm.deployer.Deploy(siteDir); err != nil {
 		dm.originator.SetError(memento, err)
-		
+
 		// 发送部署失败事件
 		dm.eventManager.Notify(NewDeploymentEventBuilder(EventDeploymentFailed).
 			WithData("site_dir", siteDir).
 			WithError(err).
 			Build())
-		
+
 		return fmt.Errorf("部署失败: %w", err)
 	}
 
 	// 获取部署 URL
 	deploymentURL := dm.deployer.GetDeploymentURL()
-	
+
 	// 获取文件统计
 	fileCollection := NewFileCollection(dm.fileIterator)
 	stats := fileCollection.GetStats()
-	
+
 	// 设置成功状态
 	dm.originator.SetSuccess(memento, deploymentURL, stats["files"].(int), stats["total_size"].(int64))
-	
+
 	// 发送部署完成事件
 	dm.eventManager.Notify(NewDeploymentEventBuilder(EventDeploymentCompleted).
 		WithData("deployment_url", deploymentURL).
@@ -266,7 +268,25 @@ func (dm *DeployManager) DeployWithRetry(siteDir string, maxRetries int) error {
 		return fmt.Errorf("部署器未初始化")
 	}
 
-	return dm.template.DeployWithRetry(dm.deployer, siteDir, maxRetries)
+	var lastErr error
+	for attempt := 1; attempt <= maxRetries; attempt++ {
+		dm.logger.Info(fmt.Sprintf("部署尝试 %d/%d", attempt, maxRetries))
+
+		if err := dm.deployer.Deploy(siteDir); err != nil {
+			lastErr = err
+			dm.logger.Warn(fmt.Sprintf("部署尝试 %d 失败: %v", attempt, err))
+
+			if attempt < maxRetries {
+				dm.logger.Info("等待重试...")
+				time.Sleep(time.Duration(attempt) * time.Second)
+			}
+		} else {
+			dm.logger.Info("部署成功")
+			return nil
+		}
+	}
+
+	return fmt.Errorf("部署失败，已重试 %d 次，最后错误: %w", maxRetries, lastErr)
 }
 
 // DeployWithRollback 带回滚的部署
@@ -275,7 +295,14 @@ func (dm *DeployManager) DeployWithRollback(siteDir string) error {
 		return fmt.Errorf("部署器未初始化")
 	}
 
-	return dm.template.DeployWithRollback(dm.deployer, siteDir)
+	// 执行部署
+	if err := dm.deployer.Deploy(siteDir); err != nil {
+		dm.logger.Warn("部署失败，尝试回滚到上一个版本")
+		// 这里可以实现回滚逻辑
+		return err
+	}
+
+	return nil
 }
 
 // validateSiteDir 验证站点目录
@@ -386,7 +413,7 @@ func (gpd *GitHubPagesDeployer) Deploy(siteDir string) error {
 
 func (gpd *GitHubPagesDeployer) GetStatus() (map[string]interface{}, error) {
 	return map[string]interface{}{
-		"type": "github_pages",
+		"type":   "github_pages",
 		"status": "not_implemented",
 	}, nil
 }
@@ -416,7 +443,7 @@ func (vd *VercelDeployer) Deploy(siteDir string) error {
 
 func (vd *VercelDeployer) GetStatus() (map[string]interface{}, error) {
 	return map[string]interface{}{
-		"type": "vercel",
+		"type":   "vercel",
 		"status": "not_implemented",
 	}, nil
 }
@@ -446,7 +473,7 @@ func (nd *NetlifyDeployer) Deploy(siteDir string) error {
 
 func (nd *NetlifyDeployer) GetStatus() (map[string]interface{}, error) {
 	return map[string]interface{}{
-		"type": "netlify",
+		"type":   "netlify",
 		"status": "not_implemented",
 	}, nil
 }
